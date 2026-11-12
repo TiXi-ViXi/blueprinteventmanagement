@@ -7,6 +7,15 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Orbitron:wght@600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <!-- Universal Mobile Barcode & QR Optical Scanning Engine (Offline + CDN fallback) -->
+  <script src="static/zxing.min.js"></script>
+  <script>
+    if (typeof ZXing === 'undefined') {
+      var zxScript = document.createElement('script');
+      zxScript.src = 'https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js';
+      document.head.appendChild(zxScript);
+    }
+  </script>
   <style>
     /* ==========================================================================
        THE BLUEPRINT ARCHITECTURAL DESIGN SYSTEM v5.0 — GATE ACCESS EDITION
@@ -880,13 +889,47 @@
       margin: 8px 0;
     }
 
+    .cam-viewport {
+      position: relative;
+      width: 100%;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #000;
+      border: 1px solid var(--bp-border-strong);
+      margin: 8px 0;
+    }
     video#cam-preview {
       width: 100%;
-      border-radius: 10px;
+      height: 280px;
       background: #000;
-      max-height: 300px;
       object-fit: cover;
-      border: 1px solid var(--bp-border);
+      display: block;
+    }
+    .cam-reticle {
+      position: absolute;
+      top: 15%;
+      left: 10%;
+      right: 10%;
+      bottom: 15%;
+      border: 2px dashed rgba(0, 240, 255, 0.65);
+      border-radius: 12px;
+      pointer-events: none;
+      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.35);
+    }
+    .cam-scanline {
+      position: absolute;
+      top: 15%;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: #00f0ff;
+      box-shadow: 0 0 8px #00f0ff, 0 0 16px #00f0ff;
+      animation: camScanAnim 2s infinite ease-in-out;
+    }
+    @keyframes camScanAnim {
+      0% { top: 15%; opacity: 0.8; }
+      50% { top: 85%; opacity: 1; }
+      100% { top: 15%; opacity: 0.8; }
     }
 
     @media (max-width: 980px) {
@@ -1187,13 +1230,30 @@
 
   <!-- Camera Scanner Modal -->
   <div class="modal-backdrop" id="cam-modal" onclick="if(event.target===this) closeCameraModal()">
-    <div class="modal-card">
+    <div class="modal-card" style="max-width: 480px;">
       <div class="modal-head">
-        <h3>📷 CAMERA BARCODE SCANNER</h3>
+        <h3>📷 CAMERA BARCODE & QR SCANNER</h3>
         <button class="btn" onclick="closeCameraModal()">✕</button>
       </div>
-      <video id="cam-preview" playsinline muted></video>
-      <p id="cam-status" class="font-mono-cad" style="font-size:12px;color:var(--bp-text-soft);margin:10px 0 0;">Starting camera...</p>
+
+      <!-- Controls: Camera Selection & Torch -->
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;">
+        <select id="cam-device-select" class="gate-input" style="flex:1;height:34px;font-size:11px;display:none;" onchange="startCameraStream(this.value)">
+        </select>
+        <button id="cam-torch-btn" type="button" class="btn" style="display:none;padding:6px 12px;font-size:11px;" onclick="toggleCamTorch()">
+          ⚡ Torch: OFF
+        </button>
+      </div>
+
+      <!-- Camera Viewport with Scanner Reticle -->
+      <div class="cam-viewport">
+        <video id="cam-preview" playsinline webkit-playsinline autoplay muted></video>
+        <div class="cam-reticle">
+          <div class="cam-scanline"></div>
+        </div>
+      </div>
+
+      <p id="cam-status" class="font-mono-cad" style="font-size:12px;color:var(--bp-text-soft);margin:8px 0 0;text-align:center;line-height:1.5;">Starting camera...</p>
     </div>
   </div>
 
@@ -6803,40 +6863,222 @@
     }
     function closeMobileModal() { document.getElementById("mobile-modal").classList.remove("open"); }
 
-    let camStream = null, camTimer = null;
+    let camStream = null;
+    let camTimer = null;
+    let zxingReader = null;
+    let activeCameraTrack = null;
+    let isTorchOn = false;
+
+    async function getCameraDevices() {
+      try {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return [];
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        return devices.filter(d => d.kind === "videoinput");
+      } catch (e) {
+        return [];
+      }
+    }
+
+    async function toggleCamTorch() {
+      if (!activeCameraTrack) return;
+      try {
+        const capabilities = activeCameraTrack.getCapabilities ? activeCameraTrack.getCapabilities() : {};
+        if (!capabilities.torch) {
+          alert("Flashlight / Torch is not supported by this camera.");
+          return;
+        }
+        isTorchOn = !isTorchOn;
+        await activeCameraTrack.applyConstraints({
+          advanced: [{ torch: isTorchOn }]
+        });
+        const btn = document.getElementById("cam-torch-btn");
+        if (btn) btn.innerHTML = isTorchOn ? "⚡ Torch: ON" : "⚡ Torch: OFF";
+      } catch (e) {
+        console.warn("Torch error:", e);
+      }
+    }
+
     async function openCameraModal() {
-      const modal = document.getElementById("cam-modal"), status = document.getElementById("cam-status"), video = document.getElementById("cam-preview");
+      const modal = document.getElementById("cam-modal");
+      const status = document.getElementById("cam-status");
+      const devSelect = document.getElementById("cam-device-select");
+
       modal.classList.add("open");
-      if (!("BarcodeDetector" in window)) {
-        status.textContent = "Native camera barcode detection is not supported here. Use WNL-S011-USB via USB/OTG or Chrome on Android.";
+      status.textContent = "Requesting camera permissions...";
+
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        const isHttps = window.location.protocol === "https:" || window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+        if (!isHttps) {
+          status.innerHTML = `<span style="color:var(--bp-danger);font-weight:bold;">⚠️ Insecure Origin Block:</span> Mobile browsers forbid camera access over plain HTTP.<br/>Please open the secure HTTPS URL on your phone:<br/><a href="https://blueprinteventmanagement.shop/bsaaevent" target="_blank" style="color:var(--bp-accent);text-decoration:underline;">https://blueprinteventmanagement.shop/bsaaevent</a>`;
+        } else {
+          status.textContent = "Camera API (getUserMedia) is not supported by this browser. Please use Chrome or Safari.";
+        }
         return;
       }
+
       try {
-        const detector = new BarcodeDetector({ formats: ["code_39", "code_128", "qr_code"] });
-        camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-        video.srcObject = camStream; await video.play();
-        status.textContent = "Point camera at the ID Card barcode...";
-        let lastCamCode = "", lastCamTs = 0;
+        const videoDevices = await getCameraDevices();
+        if (devSelect && videoDevices.length > 0) {
+          devSelect.innerHTML = videoDevices.map((d, i) => `<option value="${d.deviceId}">${d.label || ('Camera ' + (i + 1))}</option>`).join("");
+          devSelect.style.display = videoDevices.length > 1 ? "inline-block" : "none";
+        }
+      } catch (_) {}
+
+      await startCameraStream();
+    }
+
+    async function startCameraStream(preferredDeviceId = null) {
+      const status = document.getElementById("cam-status");
+      const video = document.getElementById("cam-preview");
+      const torchBtn = document.getElementById("cam-torch-btn");
+
+      if (camStream) {
+        camStream.getTracks().forEach(t => t.stop());
+        camStream = null;
+      }
+      if (camTimer) {
+        clearInterval(camTimer);
+        camTimer = null;
+      }
+      if (zxingReader) {
+        try { zxingReader.reset(); } catch (_) {}
+      }
+
+      let stream = null;
+      const constraintList = [];
+
+      if (preferredDeviceId) {
+        constraintList.push({ video: { deviceId: { exact: preferredDeviceId }, width: { ideal: 1280 }, height: { ideal: 720 } } });
+      }
+      constraintList.push({ video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } } });
+      constraintList.push({ video: { facingMode: "environment" } });
+      constraintList.push({ video: true });
+
+      let lastError = null;
+      for (const c of constraintList) {
+        try {
+          stream = await navigator.mediaDevices.getUserMedia(c);
+          if (stream) break;
+        } catch (err) {
+          lastError = err;
+        }
+      }
+
+      if (!stream) {
+        status.innerHTML = `<span style="color:var(--bp-danger);font-weight:bold;">Camera access failed:</span> ${lastError?.message || 'Permission denied'}.<br/><small style="color:var(--bp-muted);">Please check your browser address bar permissions and allow Camera.</small>`;
+        return;
+      }
+
+      camStream = stream;
+      activeCameraTrack = stream.getVideoTracks()[0];
+
+      if (torchBtn && activeCameraTrack) {
+        try {
+          const cap = activeCameraTrack.getCapabilities ? activeCameraTrack.getCapabilities() : {};
+          torchBtn.style.display = cap.torch ? "inline-block" : "none";
+        } catch (_) {
+          torchBtn.style.display = "none";
+        }
+      }
+
+      video.srcObject = stream;
+      video.setAttribute("playsinline", "true");
+      video.setAttribute("webkit-playsinline", "true");
+      video.setAttribute("autoplay", "true");
+      video.muted = true;
+      try {
+        await video.play();
+      } catch (_) {}
+
+      let useNativeDetector = ("BarcodeDetector" in window);
+      let detector = null;
+
+      if (useNativeDetector) {
+        try {
+          detector = new BarcodeDetector({ formats: ["code_39", "code_128", "qr_code", "ean_13", "ean_8", "upc_a", "upc_e", "itf"] });
+          status.innerHTML = `<span style="color:var(--bp-success);font-weight:bold;">● Native Optical Scanner Active</span><br/>Align attendee barcode or QR code inside reticle...`;
+        } catch (_) {
+          useNativeDetector = false;
+        }
+      }
+
+      let lastCamCode = "", lastCamTs = 0;
+
+      function onBarcodeFound(rawCode) {
+        const cleanCode = (rawCode || "").trim();
+        const now = Date.now();
+        if (cleanCode && (cleanCode !== lastCamCode || now - lastCamTs > 3000)) {
+          lastCamCode = cleanCode;
+          lastCamTs = now;
+          status.innerHTML = `<span style="color:var(--bp-accent);font-weight:bold;">✓ Scanned: ${escapeHtml(cleanCode)}</span>`;
+          processScan(cleanCode);
+          try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.frequency.value = 880;
+            gain.gain.setValueAtTime(0.2, ctx.currentTime);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.12);
+          } catch (_) {}
+        }
+      }
+
+      if (useNativeDetector && detector) {
         camTimer = setInterval(async () => {
-          if (!camStream) return;
+          if (!camStream || video.readyState < 2) return;
           try {
             const barcodes = await detector.detect(video);
-            if (barcodes.length > 0) {
-              const code = barcodes[0].rawValue, now = Date.now();
-              if (code && (code !== lastCamCode || now - lastCamTs > 3500)) {
-                lastCamCode = code; lastCamTs = now;
-                status.textContent = `Detected: ${code}`;
-                processScan(code);
-              }
+            if (barcodes && barcodes.length > 0) {
+              onBarcodeFound(barcodes[0].rawValue);
             }
-          } catch {}
-        }, 300);
-      } catch (err) { status.textContent = "Camera error: " + err.message; }
+          } catch (e) {
+            clearInterval(camTimer);
+            camTimer = null;
+            startZXingEngine(video, onBarcodeFound, status);
+          }
+        }, 220);
+      } else {
+        startZXingEngine(video, onBarcodeFound, status);
+      }
     }
+
+    function startZXingEngine(video, onBarcodeFound, status) {
+      if (typeof ZXing !== "undefined" && ZXing.BrowserMultiFormatReader) {
+        try {
+          status.innerHTML = `<span style="color:var(--bp-accent);font-weight:bold;">● Universal ZXing Scanner Active (iOS & Android)</span><br/>Align attendee barcode or QR code inside reticle...`;
+          zxingReader = new ZXing.BrowserMultiFormatReader();
+          zxingReader.decodeFromVideoElement(video, (result, err) => {
+            if (result) {
+              onBarcodeFound(result.getText());
+            }
+          });
+        } catch (err) {
+          status.textContent = "Optical engine initialization failed: " + err.message;
+        }
+      } else {
+        status.innerHTML = `<span style="color:var(--bp-danger);">Optical library loading...</span><br/>Please wait or reload page over HTTPS.`;
+        setTimeout(() => startZXingEngine(video, onBarcodeFound, status), 800);
+      }
+    }
+
     function closeCameraModal() {
       document.getElementById("cam-modal").classList.remove("open");
       if (camTimer) { clearInterval(camTimer); camTimer = null; }
-      if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
+      if (zxingReader) {
+        try { zxingReader.reset(); } catch (_) {}
+        zxingReader = null;
+      }
+      if (camStream) {
+        camStream.getTracks().forEach(t => t.stop());
+        camStream = null;
+      }
+      activeCameraTrack = null;
+      isTorchOn = false;
+      const torchBtn = document.getElementById("cam-torch-btn");
+      if (torchBtn) torchBtn.innerHTML = "⚡ Torch: OFF";
     }
 
     function escapeHtml(s) {
