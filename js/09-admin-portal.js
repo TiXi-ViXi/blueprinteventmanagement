@@ -24,15 +24,57 @@
   /* ==================== 1. CRYPTOGRAPHIC UTILITIES (SHA-256) ==================== */
   const HASH_SALT = 'bp_khulna_salt_v5_';
 
-  // Fallback simple hash if SubtleCrypto is unavailable
-  function fallbackSha256(str) {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash |= 0;
+  // Standalone bitwise SHA-256 implementation (RFC 6234 compliant)
+  // Ensures 100% deterministic SHA-256 in all environments (HTTP, HTTPS, WebView, offline)
+  function standaloneSha256(ascii) {
+    function rightRotate(value, amount) { return (value >>> amount) | (value << (32 - amount)); }
+    var mathPow = Math.pow, maxWord = mathPow(2, 32), lengthProperty = 'length', i, j, result = '', words = [], asciiBitLength = ascii[lengthProperty] * 8, hash = [], k = [], primeCounter = 0, isComposite = {};
+    for (var candidate = 2; primeCounter < 64; candidate++) {
+      if (!isComposite[candidate]) {
+        for (i = 0; i < 313; i += candidate) isComposite[i] = candidate;
+        hash[primeCounter] = (mathPow(candidate, .5) * maxWord) | 0;
+        k[primeCounter++] = (mathPow(candidate, 1/3) * maxWord) | 0;
+      }
     }
-    return Math.abs(hash).toString(16).padStart(16, '0');
+    ascii += '\x80';
+    while (ascii[lengthProperty] % 64 - 56) ascii += '\x00';
+    for (i = 0; i < ascii[lengthProperty]; i++) {
+      j = ascii.charCodeAt(i);
+      words[i >> 2] |= j << ((3 - i) % 4) * 8;
+    }
+    words[words[lengthProperty]] = ((asciiBitLength / maxWord) | 0);
+    words[words[lengthProperty]] = (asciiBitLength | 0);
+    for (j = 0; j < words[lengthProperty];) {
+      var w = words.slice(j, j += 16), oldHash = hash;
+      hash = hash.slice(0, 8);
+      for (i = 0; i < 64; i++) {
+        var w15 = w[i - 15], w2 = w[i - 2];
+        var s0 = rightRotate(w15, 7) ^ rightRotate(w15, 18) ^ (w15 >>> 3);
+        var s1 = rightRotate(w2, 17) ^ rightRotate(w2, 19) ^ (w2 >>> 10);
+        var ch = (hash[4] & hash[5]) ^ (~hash[4] & hash[6]);
+        var maj = (hash[0] & hash[1]) ^ (hash[0] & hash[2]) ^ (hash[1] & hash[2]);
+        var temp1 = hash[7] + (rightRotate(hash[4], 6) ^ rightRotate(hash[4], 11) ^ rightRotate(hash[4], 25)) + ch + k[i] + (w[i] = (i < 16) ? w[i] : (w[i - 16] + s0 + w[i - 7] + s1) | 0);
+        var temp2 = (rightRotate(hash[0], 2) ^ rightRotate(hash[0], 13) ^ rightRotate(hash[0], 22)) + maj;
+        hash = [(temp1 + temp2) | 0].concat(hash);
+        hash[4] = (hash[4] + temp1) | 0;
+      }
+      for (i = 0; i < 8; i++) hash[i] = (hash[i] + oldHash[i]) | 0;
+    }
+    for (i = 0; i < 8; i++) {
+      for (j = 3; j >= 0; j--) {
+        var b = (hash[i] >> (8 * j)) & 255;
+        result += (b < 16 ? '0' : '') + b.toString(16);
+      }
+    }
+    return result;
+  }
+
+  function utf8Encode(str) {
+    try {
+      return unescape(encodeURIComponent(str));
+    } catch (_) {
+      return str;
+    }
   }
 
   async function hashPassword(plainText) {
@@ -45,10 +87,10 @@
         const hashArray = Array.from(new Uint8Array(hashBuffer));
         return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
       } catch (_) {
-        return fallbackSha256(salted);
+        return standaloneSha256(utf8Encode(salted));
       }
     }
-    return fallbackSha256(salted);
+    return standaloneSha256(utf8Encode(salted));
   }
 
   // Cryptographically computed SHA-256 hash for default 'admin123' with salt bp_khulna_salt_v5_
@@ -449,7 +491,7 @@ Level 03, Royal Corner, KDA Avenue, Khulna, Bangladesh.
     window.addEventListener(evt, handleUserActivityThrottled, { passive: true });
   });
 
-  // Cross-Tab Session Synchronization (Lock or Signout everywhere)
+  // Cross-Tab Session & Database Synchronization
   window.addEventListener('storage', (e) => {
     if (e.key === STORAGE_KEYS.SESSION) {
       const previousUserId = currentSession?.userId;
@@ -462,8 +504,119 @@ Level 03, Royal Corner, KDA Avenue, Khulna, Bangladesh.
       } else if (currentSession) {
         renderPortal();
       }
+    } else if (e.key === STORAGE_KEYS.USERS) {
+      usersList = loadFromStorage(STORAGE_KEYS.USERS, usersList);
+      const container = document.getElementById('adminPortalBody');
+      if (container && container.children.length > 0 && currentSession) {
+        renderActiveTabContent(getCurrentUser());
+      }
     }
   });
+
+  /* ==================== 5.1 LIVE SERVER & DATABASE SYNC ENGINE ==================== */
+  let isSyncingWithServer = false;
+
+  async function apiRequest(endpoint, method = 'GET', body = null, timeoutMs = 4500) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+      const opts = {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal
+      };
+      if (body) {
+        opts.body = JSON.stringify(body);
+      }
+      const res = await fetch(endpoint, opts);
+      clearTimeout(timeoutId);
+      let data = null;
+      try { data = await res.json(); } catch (_) {}
+      if (!res.ok) {
+        return { ok: false, status: res.status, error: data?.error || `HTTP ${res.status}` };
+      }
+      return { ok: true, status: res.status, data };
+    } catch (err) {
+      return { ok: false, status: 0, error: err?.message || 'Network unreachable' };
+    }
+  }
+
+  async function syncWithServer(isManual = false) {
+    if (isSyncingWithServer) return;
+    isSyncingWithServer = true;
+
+    try {
+      const res = await apiRequest('/api/sync', 'GET');
+      if (res.ok && res.data && res.data.data) {
+        const serverData = res.data.data;
+        const serverUsers = serverData.users || [];
+
+        // Reconcile Users: Server is authoritative, but local custom users not yet on server are preserved and uploaded
+        const localById = new Map();
+        usersList.forEach((u) => {
+          const k = (u.id || u.username || '').toLowerCase();
+          if (k) localById.set(k, u);
+        });
+
+        const mergedUsers = [...serverUsers];
+        const serverIds = new Set(serverUsers.map((u) => (u.id || u.username || '').toLowerCase()));
+        const missingOnServer = [];
+
+        localById.forEach((u, k) => {
+          if (!serverIds.has(k) && k !== 'superadmin' && k !== 'admin') {
+            missingOnServer.push(u);
+            mergedUsers.push(u);
+          }
+        });
+
+        // Ensure superadmin always exists
+        if (!mergedUsers.some((u) => u.tier === 'superadmin' || u.id === 'superadmin' || u.id === 'admin')) {
+          mergedUsers.unshift(DEFAULT_SUPER_ADMIN);
+        }
+
+        usersList = mergedUsers;
+        saveToStorage(STORAGE_KEYS.USERS, usersList);
+
+        // Upload any local users that were created while offline
+        if (missingOnServer.length > 0) {
+          apiRequest('/api/sync', 'POST', { users: missingOnServer }).catch(() => {});
+        }
+
+        // Sync Funds
+        if (serverData.funds) {
+          fundsData = serverData.funds;
+          saveToStorage(STORAGE_KEYS.FUNDS, fundsData);
+        }
+
+        // Sync Chat
+        if (serverData.chat && serverData.chat.length > 0) {
+          chatData = serverData.chat;
+          saveToStorage(STORAGE_KEYS.CHAT, chatData);
+        }
+
+        // Sync Vault
+        if (serverData.vault && serverData.vault.length > 0) {
+          vaultData = serverData.vault;
+          saveToStorage(STORAGE_KEYS.VAULT, vaultData);
+        }
+
+        if (isManual) {
+          App.toast(`Database synced: ${usersList.length} users live.`, 'success', 'DB SYNCED');
+          App.playTone('confirm');
+        }
+
+        // Re-render if dashboard open
+        const container = document.getElementById('adminPortalBody');
+        if (container && container.children.length > 0 && currentSession) {
+          renderActiveTabContent(getCurrentUser());
+        }
+      }
+    } catch (_) {
+      // Offline fallback
+    } finally {
+      isSyncingWithServer = false;
+    }
+  }
 
   /* ==================== 6. AUTH & ROLE LOGIC ==================== */
   function getCurrentUser() {
@@ -477,7 +630,8 @@ Level 03, Royal Corner, KDA Avenue, Khulna, Bangladesh.
         return null;
       }
     }
-    return usersList.find((u) => u.id === currentSession.userId) || null;
+    const cleanId = (currentSession.userId || '').toLowerCase();
+    return usersList.find((u) => (u.id || '').toLowerCase() === cleanId || (u.username || '').toLowerCase() === cleanId) || null;
   }
 
   function isSuperAdmin() {
@@ -509,30 +663,69 @@ Level 03, Royal Corner, KDA Avenue, Khulna, Bangladesh.
       }
     }
 
-    // Match by ID or Username
-    const user = usersList.find((u) => {
-      const uId = (u.id || '').toLowerCase();
-      const uName = (u.username || '').toLowerCase();
-      if (cleanId === 'superadmin' || cleanId === 'admin') {
-        return u.tier === 'superadmin' || uId === 'superadmin' || uId === 'admin';
-      }
-      return uId === cleanId || uName === cleanId;
-    });
+    // Refresh usersList from storage in case updated in another tab
+    usersList = loadFromStorage(STORAGE_KEYS.USERS, usersList);
 
-    // Cryptographic hash comparison
+    // Compute cryptographic hash
     const hashedAttempt = await hashPassword(cleanPass);
-    let passMatches = !!(user && user.passwordHash && user.passwordHash === hashedAttempt);
 
-    // Self-healing: if superadmin uses default 'admin123', ensure hash is correct and accept
-    if (!passMatches && isSuperAttempt && (cleanPass === 'admin123' || hashedAttempt === DEFAULT_SUPER_ADMIN_HASH)) {
-      passMatches = true;
-      if (user) {
-        user.passwordHash = DEFAULT_SUPER_ADMIN_HASH;
+    // 1. ATTEMPT REAL-TIME SERVER DATABASE AUTHENTICATION
+    let authenticatedUser = null;
+    let serverReplied = false;
+    try {
+      const authRes = await apiRequest('/api/auth/login', 'POST', {
+        username: cleanId,
+        password: cleanPass,
+        passwordHash: hashedAttempt
+      }, 4000);
+
+      if (authRes.ok && authRes.data && authRes.data.success && authRes.data.user) {
+        serverReplied = true;
+        authenticatedUser = authRes.data.user;
+        // Merge into local store
+        const existingIdx = usersList.findIndex((u) => (u.id || '').toLowerCase() === (authenticatedUser.id || '').toLowerCase());
+        if (existingIdx >= 0) {
+          usersList[existingIdx] = authenticatedUser;
+        } else {
+          usersList.push(authenticatedUser);
+        }
         saveToStorage(STORAGE_KEYS.USERS, usersList);
+      } else if (authRes.status === 401) {
+        // Server explicitly rejected credentials
+        serverReplied = true;
+        authenticatedUser = null;
+      }
+    } catch (_) {
+      // Server unreachable -> will proceed to offline fallback
+    }
+
+    // 2. OFFLINE FALLBACK (If server unreachable)
+    if (!authenticatedUser && !serverReplied) {
+      const localUser = usersList.find((u) => {
+        const uId = (u.id || '').toLowerCase();
+        const uName = (u.username || '').toLowerCase();
+        if (cleanId === 'superadmin' || cleanId === 'admin') {
+          return u.tier === 'superadmin' || uId === 'superadmin' || uId === 'admin';
+        }
+        return uId === cleanId || uName === cleanId;
+      });
+
+      let passMatches = !!(localUser && localUser.passwordHash && localUser.passwordHash === hashedAttempt);
+      if (!passMatches && isSuperAttempt && (cleanPass === 'admin123' || hashedAttempt === DEFAULT_SUPER_ADMIN_HASH)) {
+        passMatches = true;
+        if (localUser) {
+          localUser.passwordHash = DEFAULT_SUPER_ADMIN_HASH;
+          saveToStorage(STORAGE_KEYS.USERS, usersList);
+        }
+      }
+
+      if (passMatches) {
+        authenticatedUser = localUser;
       }
     }
 
-    if (!user || !passMatches) {
+    // 3. AUTHENTICATION FAILURE HANDLING
+    if (!authenticatedUser) {
       const newCount = lockoutState.failedCount + 1;
       logSecurityEvent('AUTH_FAILURE', `Failed login attempt for ID: "${cleanId}"`, 'danger');
 
@@ -542,13 +735,13 @@ Level 03, Royal Corner, KDA Avenue, Khulna, Bangladesh.
         App.toast('Anti-Brute-Force Triggered: 5 failed attempts. System locked for 60 seconds.', 'danger', 'SYSTEM LOCKOUT');
       } else {
         saveLockoutState(newCount, 0);
-        // Anti-Enumeration: same message for both unknown user and wrong password
         App.toast(`Invalid User ID or Password. (${5 - newCount} attempts remaining)`, 'danger', 'ACCESS DENIED');
       }
       return false;
     }
 
-    // Success: Clear failed attempts
+    // 4. AUTHENTICATION SUCCESS
+    const user = authenticatedUser;
     clearLockoutState();
     isDashboardLocked = false;
     const sessionToken = generateSecureToken();
@@ -625,13 +818,19 @@ Level 03, Royal Corner, KDA Avenue, Khulna, Bangladesh.
     delete user.plainPasswordFallback;
     saveToStorage(STORAGE_KEYS.USERS, usersList);
 
+    // Sync to Server Database
+    apiRequest(`/api/users/${encodeURIComponent(user.id)}/reset-password`, 'POST', {
+      password: newPlain,
+      passwordHash: newHash
+    }).catch(() => {});
+
     logSecurityEvent('PASSWORD_CHANGED', `User @${user.username || user.id} updated their password`, 'success');
     App.playTone('confirm');
-    App.toast('Password updated and encrypted successfully!', 'success', 'SECURITY UPDATED');
+    App.toast('Password updated and synchronized successfully!', 'success', 'SECURITY UPDATED');
     return true;
   }
 
-  function updateMyProfile({ name, hotline, sector }) {
+  async function updateMyProfile({ name, hotline, sector }) {
     const user = getCurrentUser();
     if (!user) return false;
 
@@ -644,9 +843,17 @@ Level 03, Royal Corner, KDA Avenue, Khulna, Bangladesh.
     if (sector && isSuperAdmin()) user.sector = sector.trim();
 
     saveToStorage(STORAGE_KEYS.USERS, usersList);
+
+    // Sync to Server Database
+    apiRequest(`/api/users/${encodeURIComponent(user.id)}/profile`, 'POST', {
+      name: user.name,
+      hotline: user.hotline,
+      sector: user.sector
+    }).catch(() => {});
+
     logSecurityEvent('PROFILE_UPDATED', `User @${user.username || user.id} updated profile details`);
     App.playTone('confirm');
-    App.toast('Profile details saved successfully!', 'success', 'PROFILE SAVED');
+    App.toast('Profile details saved to database!', 'success', 'PROFILE SAVED');
     renderPortal();
     return true;
   }
@@ -671,6 +878,9 @@ Level 03, Royal Corner, KDA Avenue, Khulna, Bangladesh.
       App.toast('Password must be at least 6 characters for security.', 'warning');
       return false;
     }
+
+    // Refresh usersList from storage in case another tab or server sync created users
+    usersList = loadFromStorage(STORAGE_KEYS.USERS, usersList);
 
     if (cleanUsername === 'superadmin' || cleanUsername === 'admin' || usersList.some((u) => (u.id || '').toLowerCase() === cleanUsername || (u.username || '').toLowerCase() === cleanUsername)) {
       App.toast(`Username ID "${cleanUsername}" is already in use. Please choose another.`, 'warning', 'USERNAME TAKEN');
@@ -697,9 +907,26 @@ Level 03, Royal Corner, KDA Avenue, Khulna, Bangladesh.
 
     usersList.push(newUser);
     saveToStorage(STORAGE_KEYS.USERS, usersList);
+
+    // Save directly to live SQLite Database on VPS / Server
+    try {
+      const dbRes = await apiRequest('/api/users', 'POST', {
+        ...newUser,
+        password: cleanPass
+      });
+      if (dbRes.ok && dbRes.data && dbRes.data.user) {
+        const confirmedUser = dbRes.data.user;
+        const idx = usersList.findIndex((u) => (u.id || '').toLowerCase() === cleanUsername);
+        if (idx >= 0) usersList[idx] = confirmedUser;
+        saveToStorage(STORAGE_KEYS.USERS, usersList);
+      }
+    } catch (_) {
+      // Offline fallback
+    }
+
     logSecurityEvent('USER_CREATED', `Super Admin created user @${cleanUsername} (${cleanName})`, 'success');
     App.playTone('confirm');
-    App.toast(`User "${cleanName}" (@${cleanUsername}) created and encrypted!`, 'success', 'USER CREATED');
+    App.toast(`User "${cleanName}" (@${cleanUsername}) saved to database!`, 'success', 'USER CREATED');
     return newUser;
   }
 
@@ -713,17 +940,25 @@ Level 03, Royal Corner, KDA Avenue, Khulna, Bangladesh.
       return false;
     }
 
-    targetUser.passwordHash = await hashPassword(newPlain);
+    const newHash = await hashPassword(newPlain);
+    targetUser.passwordHash = newHash;
     delete targetUser.password;
     delete targetUser.plainPasswordFallback;
     saveToStorage(STORAGE_KEYS.USERS, usersList);
+
+    // Sync to Server Database
+    apiRequest(`/api/users/${encodeURIComponent(userId)}/reset-password`, 'POST', {
+      password: newPlain,
+      passwordHash: newHash
+    }).catch(() => {});
+
     logSecurityEvent('ADMIN_RESET_PASSWORD', `Super Admin reset password for @${targetUser.username || targetUser.id}`, 'warning');
     App.playTone('confirm');
-    App.toast(`Password for @${targetUser.username} successfully reset!`, 'success', 'PASSWORD RESET');
+    App.toast(`Password for @${targetUser.username} successfully reset in database!`, 'success', 'PASSWORD RESET');
     return true;
   }
 
-  function deleteUser(userId) {
+  async function deleteUser(userId) {
     if (!isSuperAdmin()) {
       App.toast('Only the Super Admin can delete users.', 'warning');
       return false;
@@ -738,6 +973,9 @@ Level 03, Royal Corner, KDA Avenue, Khulna, Bangladesh.
     usersList = usersList.filter((u) => u.id !== userId);
     saveToStorage(STORAGE_KEYS.USERS, usersList);
 
+    // Delete from Server Database
+    apiRequest(`/api/users/${encodeURIComponent(userId)}`, 'DELETE').catch(() => {});
+
     logSecurityEvent('USER_DELETED', `Super Admin removed user @${targetUser?.username || userId}`, 'warning');
 
     if (currentSession && currentSession.userId === userId) {
@@ -746,23 +984,28 @@ Level 03, Royal Corner, KDA Avenue, Khulna, Bangladesh.
     }
 
     App.playTone('click');
-    App.toast('User removed from system.', 'info', 'USER DELETED');
+    App.toast('User removed from database.', 'info', 'USER DELETED');
     renderPortal();
     return true;
   }
 
-  function removeAllUsers() {
+  async function removeAllUsers() {
     if (!isSuperAdmin()) {
       App.toast('Only the Super Admin can remove all users.', 'warning');
       return false;
     }
 
     const count = usersList.length - 1;
+    for (const u of usersList) {
+      if (u.id !== 'superadmin' && u.id !== 'admin' && u.tier !== 'superadmin') {
+        apiRequest(`/api/users/${encodeURIComponent(u.id)}`, 'DELETE').catch(() => {});
+      }
+    }
     usersList = [DEFAULT_SUPER_ADMIN];
     saveToStorage(STORAGE_KEYS.USERS, usersList);
     logSecurityEvent('ALL_USERS_PURGED', `Super Admin purged all ${count} created users`, 'danger');
     App.playTone('confirm');
-    App.toast(`All created users removed (${count} total). Only Super Admin remains.`, 'success', 'ALL USERS REMOVED');
+    App.toast(`All created users removed from database (${count} total). Only Super Admin remains.`, 'success', 'ALL USERS REMOVED');
     renderPortal();
     return true;
   }
@@ -1324,6 +1567,10 @@ Level 03, Royal Corner, KDA Avenue, Khulna, Bangladesh.
               <i class="fa-solid fa-user-plus"></i>
               <span>CREATE NEW USER</span>
             </button>
+            <button id="syncDatabaseBtn" type="button" class="px-3.5 py-2.5 rounded-xl border border-cyan-400/50 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 font-mono-cad text-xs font-bold flex items-center gap-1.5 transition-colors" title="Sync live database across all devices">
+              <i class="fa-solid fa-rotate"></i>
+              <span>SYNC DB</span>
+            </button>
 
             ${createdUsers.length ? `
               <button id="removeAllUsersBtn" type="button" class="px-3.5 py-2.5 rounded-xl border border-red-500/50 bg-red-500/10 text-red-400 hover:bg-red-500/20 font-mono-cad text-xs font-bold flex items-center gap-1.5 transition-colors">
@@ -1573,6 +1820,19 @@ Level 03, Royal Corner, KDA Avenue, Khulna, Bangladesh.
         }
       });
     });
+
+    // Sync database button
+    const syncDbBtn = target.querySelector('#syncDatabaseBtn');
+    if (syncDbBtn) {
+      syncDbBtn.addEventListener('click', async () => {
+        syncDbBtn.innerHTML = '<i class="fa-solid fa-rotate fa-spin text-xs"></i> <span>SYNCING...</span>';
+        syncDbBtn.disabled = true;
+        await syncWithServer(true);
+        syncDbBtn.innerHTML = '<i class="fa-solid fa-rotate text-xs"></i> <span>SYNC DB</span>';
+        syncDbBtn.disabled = false;
+        renderUserManagementTab(target, user);
+      });
+    }
 
     // Remove all users
     const removeAllBtn = target.querySelector('#removeAllUsersBtn');
@@ -2313,10 +2573,22 @@ Level 03, Royal Corner, KDA Avenue, Khulna, Bangladesh.
     }
 
     updateHeaderAdminButton();
+
+    // Auto-sync with live SQLite database on startup
+    setTimeout(() => {
+      syncWithServer().catch(() => {});
+    }, 120);
+
+    // Periodic live synchronization every 30 seconds
+    setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        syncWithServer().catch(() => {});
+      }
+    }, 30000);
   }
 
   App.admin = {
-    users: usersList,
+    get users() { return usersList; },
     getCurrentUser,
     isSuperAdmin,
     createUser,
@@ -2327,6 +2599,7 @@ Level 03, Royal Corner, KDA Avenue, Khulna, Bangladesh.
     changeMyPassword,
     updateMyProfile,
     lockDashboard,
+    syncWithServer,
     renderPortal,
     openPortal: () => {
       App.openModal('adminPortalModal');

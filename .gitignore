@@ -7,6 +7,18 @@ Thumbs.db
 .vscode/
 .idea/
 
+# Python
+__pycache__/
+*.py[cod]
+
+# SQLite & Live Database Data (preserved across git pulls)
+data/*.db
+data/*.db-journal
+data/*.db-wal
+data/*.db-shm
+*.sqlite
+*.sqlite3
+
 # Windows temp scripts & logs
 get-portable-git.ps1
 *.log

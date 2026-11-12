@@ -165,7 +165,7 @@
   <script defer src="js/00-registry.js"></script>
   <script defer src="js/01-hud-shell.js"></script>
   <script defer src="js/02-visual-fx.js"></script>
-  <script defer src="js/09-admin-portal.js?v=6.2"></script>
+  <script defer src="js/09-admin-portal.js?v=6.3"></script>
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -193,8 +193,11 @@
         }
       }
 
-      // Check on load
-      setTimeout(checkSession, 80);
+      // Proactively sync database with server on load
+      setTimeout(() => {
+        checkSession();
+        App.admin?.syncWithServer?.().then(checkSession).catch(() => {});
+      }, 80);
 
       // Eye toggle
       togglePassBtn?.addEventListener('click', () => {
