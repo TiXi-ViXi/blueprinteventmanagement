@@ -1,0 +1,16 @@
+# OS & Editor
+.DS_Store
+Thumbs.db
+*.swp
+*.bak
+*~
+.vscode/
+.idea/
+
+# Windows temp scripts & logs
+get-portable-git.ps1
+*.log
+
+# Archives
+*.rar
+blueprint-event-management.zip

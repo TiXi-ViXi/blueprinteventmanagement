@@ -1,0 +1,1947 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="cyan">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>BSAA FAMILY NIGHT 2026 // GATE ACCESS TERMINAL</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Orbitron:wght@600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    /* ==========================================================================
+       THE BLUEPRINT ARCHITECTURAL DESIGN SYSTEM v5.0 — GATE ACCESS EDITION
+       ========================================================================== */
+    :root,
+    [data-theme="cyan"] {
+      --bp-bg: #030712;
+      --bp-bg-elevated: #08101f;
+      --bp-surface: rgba(10, 20, 36, 0.86);
+      --bp-surface-solid: #0a1424;
+      --bp-panel: rgba(14, 28, 48, 0.94);
+      --bp-accent: #00f0ff;
+      --bp-accent-2: #7df9ff;
+      --bp-accent-rgb: 0, 240, 255;
+      --bp-secondary: #f59e0b;
+      --bp-secondary-rgb: 245, 158, 11;
+      --bp-success: #10b981;
+      --bp-success-rgb: 16, 185, 129;
+      --bp-danger: #f43f5e;
+      --bp-danger-rgb: 244, 63, 94;
+      --bp-text: #f8fafc;
+      --bp-text-soft: #cbd5e1;
+      --bp-muted: #94a3b8;
+      --bp-border: rgba(0, 240, 255, 0.24);
+      --bp-border-strong: rgba(0, 240, 255, 0.62);
+      --bp-grid-major: rgba(0, 240, 255, 0.065);
+      --bp-grid-minor: rgba(0, 240, 255, 0.025);
+      --bp-shadow: 0 18px 45px -15px rgba(0, 0, 0, 0.78), 0 0 24px rgba(0, 240, 255, 0.12);
+      --bp-glow: 0 0 16px rgba(0, 240, 255, 0.45);
+      --bp-btn-text: #030712;
+    }
+
+    [data-theme="gold"] {
+      --bp-bg: #07060b;
+      --bp-bg-elevated: #100e18;
+      --bp-surface: rgba(18, 15, 28, 0.88);
+      --bp-surface-solid: #120f1c;
+      --bp-panel: rgba(26, 21, 38, 0.94);
+      --bp-accent: #f59e0b;
+      --bp-accent-2: #fde68a;
+      --bp-accent-rgb: 245, 158, 11;
+      --bp-secondary: #38bdf8;
+      --bp-secondary-rgb: 56, 189, 248;
+      --bp-success: #10b981;
+      --bp-success-rgb: 16, 185, 129;
+      --bp-danger: #fb7185;
+      --bp-danger-rgb: 251, 113, 133;
+      --bp-text: #fafaf9;
+      --bp-text-soft: #e7e5e4;
+      --bp-muted: #a8a29e;
+      --bp-border: rgba(245, 158, 11, 0.26);
+      --bp-border-strong: rgba(245, 158, 11, 0.65);
+      --bp-grid-major: rgba(245, 158, 11, 0.06);
+      --bp-grid-minor: rgba(245, 158, 11, 0.025);
+      --bp-shadow: 0 18px 45px -15px rgba(0, 0, 0, 0.78), 0 0 26px rgba(245, 158, 11, 0.14);
+      --bp-glow: 0 0 16px rgba(245, 158, 11, 0.45);
+      --bp-btn-text: #07060b;
+    }
+
+    [data-theme="crimson"] {
+      --bp-bg: #09040b;
+      --bp-bg-elevated: #140819;
+      --bp-surface: rgba(22, 10, 28, 0.88);
+      --bp-surface-solid: #160a1c;
+      --bp-panel: rgba(34, 14, 42, 0.94);
+      --bp-accent: #fb7185;
+      --bp-accent-2: #fecdd3;
+      --bp-accent-rgb: 251, 113, 133;
+      --bp-secondary: #38bdf8;
+      --bp-secondary-rgb: 56, 189, 248;
+      --bp-success: #34d399;
+      --bp-success-rgb: 52, 211, 153;
+      --bp-danger: #f43f5e;
+      --bp-danger-rgb: 244, 63, 94;
+      --bp-text: #fdf2f8;
+      --bp-text-soft: #e2d4e8;
+      --bp-muted: #b8a3c4;
+      --bp-border: rgba(251, 113, 133, 0.26);
+      --bp-border-strong: rgba(251, 113, 133, 0.65);
+      --bp-grid-major: rgba(251, 113, 133, 0.06);
+      --bp-grid-minor: rgba(251, 113, 133, 0.025);
+      --bp-shadow: 0 18px 45px -15px rgba(0, 0, 0, 0.78), 0 0 26px rgba(251, 113, 133, 0.16);
+      --bp-glow: 0 0 16px rgba(251, 113, 133, 0.5);
+      --bp-btn-text: #09040b;
+    }
+
+    [data-theme="light"] {
+      --bp-bg: #eef5fc;
+      --bp-bg-elevated: #ffffff;
+      --bp-surface: rgba(255, 255, 255, 0.94);
+      --bp-surface-solid: #ffffff;
+      --bp-panel: rgba(241, 247, 254, 0.96);
+      --bp-accent: #0284c7;
+      --bp-accent-2: #0369a1;
+      --bp-accent-rgb: 2, 132, 199;
+      --bp-secondary: #d97706;
+      --bp-secondary-rgb: 217, 119, 6;
+      --bp-success: #059669;
+      --bp-success-rgb: 5, 150, 105;
+      --bp-danger: #e11d48;
+      --bp-danger-rgb: 225, 29, 72;
+      --bp-text: #0f172a;
+      --bp-text-soft: #334155;
+      --bp-muted: #475569;
+      --bp-border: rgba(2, 132, 199, 0.24);
+      --bp-border-strong: rgba(2, 132, 199, 0.62);
+      --bp-grid-major: rgba(2, 132, 199, 0.08);
+      --bp-grid-minor: rgba(2, 132, 199, 0.035);
+      --bp-shadow: 0 14px 36px -12px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(2, 132, 199, 0.1);
+      --bp-glow: 0 4px 16px rgba(2, 132, 199, 0.28);
+      --bp-btn-text: #ffffff;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    html { scroll-behavior: smooth; font-size: 16px; }
+
+    body {
+      margin: 0;
+      background-color: var(--bp-bg);
+      color: var(--bp-text);
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      padding-bottom: 36px;
+      overflow-x: hidden;
+      transition: background-color 0.3s ease, color 0.3s ease;
+      background-image:
+        radial-gradient(circle at 20% 10%, rgba(var(--bp-accent-rgb), 0.11), transparent 42%),
+        radial-gradient(circle at 82% 28%, rgba(var(--bp-secondary-rgb), 0.07), transparent 36%),
+        linear-gradient(to right, var(--bp-grid-major) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--bp-grid-major) 1px, transparent 1px),
+        linear-gradient(to right, var(--bp-grid-minor) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--bp-grid-minor) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 120px 120px, 120px 120px, 24px 24px, 24px 24px;
+      background-attachment: fixed;
+    }
+
+    /* Typography helpers */
+    .font-display { font-family: 'Space Grotesk', 'Orbitron', system-ui, sans-serif; }
+    .font-tech { font-family: 'Orbitron', 'Space Grotesk', system-ui, sans-serif; }
+    .font-mono-cad { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bp-bg); }
+    ::-webkit-scrollbar-thumb { background: rgba(var(--bp-accent-rgb), 0.35); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--bp-accent); }
+
+    :focus-visible { outline: 2px solid var(--bp-accent); outline-offset: 2px; }
+
+    /* Flash overlays */
+    body.flash-entry { animation: flashGreen 0.55s ease; }
+    body.flash-exit { animation: flashCyan 0.55s ease; }
+    body.flash-warn { animation: flashAmber 0.55s ease; }
+    body.flash-error { animation: flashRed 0.55s ease; }
+    @keyframes flashGreen { 0% { box-shadow: inset 0 0 110px rgba(16,185,129,0.55); } 100% { box-shadow: none; } }
+    @keyframes flashCyan  { 0% { box-shadow: inset 0 0 110px rgba(var(--bp-accent-rgb),0.55); } 100% { box-shadow: none; } }
+    @keyframes flashAmber { 0% { box-shadow: inset 0 0 110px rgba(245,158,11,0.55); } 100% { box-shadow: none; } }
+    @keyframes flashRed   { 0% { box-shadow: inset 0 0 110px rgba(244,63,94,0.65); } 100% { box-shadow: none; } }
+
+    /* Scanline Sweep */
+    @keyframes bpScan {
+      0% { transform: translateY(-120%); }
+      100% { transform: translateY(900%); }
+    }
+    .bp-scanline {
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 14%;
+      background: linear-gradient(to bottom, transparent, rgba(var(--bp-accent-rgb), 0.07), transparent);
+      animation: bpScan 7s linear infinite;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* Architectural Frosted Card + Technical Corner Ticks */
+    .bp-card {
+      position: relative;
+      background: var(--bp-surface);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--bp-border);
+      box-shadow: var(--bp-shadow);
+      border-radius: 12px;
+      transition: border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+    .bp-card:hover {
+      border-color: var(--bp-border-strong);
+    }
+
+    .bp-ticks::after {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      pointer-events: none;
+      border-radius: inherit;
+      background:
+        linear-gradient(var(--bp-accent), var(--bp-accent)) top left / 12px 2px no-repeat,
+        linear-gradient(var(--bp-accent), var(--bp-accent)) top left / 2px 12px no-repeat,
+        linear-gradient(var(--bp-accent), var(--bp-accent)) top right / 12px 2px no-repeat,
+        linear-gradient(var(--bp-accent), var(--bp-accent)) top right / 2px 12px no-repeat,
+        linear-gradient(var(--bp-accent), var(--bp-accent)) bottom left / 12px 2px no-repeat,
+        linear-gradient(var(--bp-accent), var(--bp-accent)) bottom left / 2px 12px no-repeat,
+        linear-gradient(var(--bp-accent), var(--bp-accent)) bottom right / 12px 2px no-repeat,
+        linear-gradient(var(--bp-accent), var(--bp-accent)) bottom right / 2px 12px no-repeat;
+      opacity: 0.8;
+      z-index: 2;
+    }
+
+    /* Buttons */
+    .btn {
+      font-family: 'Space Grotesk', 'Inter', sans-serif;
+      border: 1px solid var(--bp-border-strong);
+      background: rgba(var(--bp-accent-rgb), 0.08);
+      color: var(--bp-accent);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+      text-transform: uppercase;
+    }
+    .btn:hover {
+      background: rgba(var(--bp-accent-rgb), 0.18);
+      border-color: var(--bp-accent);
+      transform: translateY(-1px);
+    }
+    .btn:active { transform: translateY(0); }
+
+    .btn-primary {
+      background: var(--bp-accent);
+      color: var(--bp-btn-text);
+      border: none;
+      box-shadow: var(--bp-glow);
+    }
+    .btn-primary:hover {
+      background: var(--bp-accent);
+      color: var(--bp-btn-text);
+      filter: brightness(1.08);
+      box-shadow: 0 0 26px rgba(var(--bp-accent-rgb), 0.65);
+    }
+
+    .btn-danger {
+      background: rgba(var(--bp-danger-rgb), 0.14);
+      color: var(--bp-danger);
+      border-color: rgba(var(--bp-danger-rgb), 0.5);
+    }
+    .btn-danger:hover {
+      background: rgba(var(--bp-danger-rgb), 0.25);
+      border-color: var(--bp-danger);
+    }
+
+    /* Top Header */
+    .topbar {
+      background: var(--bp-panel);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--bp-border);
+      padding: 12px 20px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-badge {
+      width: 42px;
+      height: 42px;
+      border-radius: 8px;
+      background: rgba(var(--bp-accent-rgb), 0.12);
+      border: 1px solid var(--bp-border-strong);
+      color: var(--bp-accent);
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 800;
+      display: grid;
+      place-items: center;
+      font-size: 13px;
+      box-shadow: var(--bp-glow);
+      flex-shrink: 0;
+    }
+    .brand h1 {
+      margin: 0;
+      font-family: 'Orbitron', 'Space Grotesk', sans-serif;
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: 0.7px;
+      color: var(--bp-text);
+      text-shadow: 0 0 14px rgba(var(--bp-accent-rgb), 0.25);
+    }
+    [data-theme="light"] .brand h1 { text-shadow: none; }
+    .brand-sub {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--bp-accent-2);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 2px;
+    }
+    .pill-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 10px;
+      font-weight: 700;
+      background: rgba(var(--bp-success-rgb), 0.15);
+      color: var(--bp-success);
+      border: 1px solid rgba(var(--bp-success-rgb), 0.45);
+    }
+    .pill-status.offline {
+      background: rgba(var(--bp-secondary-rgb), 0.16);
+      color: var(--bp-secondary);
+      border-color: rgba(var(--bp-secondary-rgb), 0.45);
+    }
+
+    .top-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+    .theme-pills {
+      display: inline-flex;
+      background: var(--bp-bg-elevated);
+      border: 1px solid var(--bp-border);
+      padding: 3px;
+      border-radius: 8px;
+      gap: 3px;
+    }
+    .theme-dot {
+      width: 22px;
+      height: 22px;
+      border-radius: 5px;
+      border: 1px solid rgba(255,255,255,0.2);
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      font-size: 10px;
+      font-weight: 800;
+    }
+    .theme-dot.active { outline: 2px solid var(--bp-text); outline-offset: 1px; }
+
+    .gate-input {
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--bp-bg-elevated);
+      border: 1px solid var(--bp-border);
+      color: var(--bp-text);
+      padding: 7px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      width: 132px;
+    }
+    .gate-input:focus { border-color: var(--bp-accent); outline: none; }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .stat-card {
+      padding: 14px 16px;
+    }
+    .stat-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--bp-muted);
+      font-weight: 600;
+    }
+    .stat-value {
+      font-family: 'Orbitron', 'Space Grotesk', sans-serif;
+      font-size: 30px;
+      font-weight: 800;
+      margin-top: 6px;
+      line-height: 1.05;
+    }
+    .stat-sub {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--bp-text-soft);
+      margin-top: 5px;
+    }
+
+    .role-strip {
+      padding: 9px 14px;
+      margin-bottom: 16px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      align-items: center;
+      justify-content: space-between;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--bp-muted);
+    }
+    .role-strip strong { color: var(--bp-accent); }
+
+    /* Main Layout */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 470px 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .panel {
+      padding: 16px;
+    }
+
+    /* Scanner Mode Selector */
+    .mode-switch {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      background: var(--bp-bg-elevated);
+      padding: 5px;
+      border-radius: 10px;
+      margin-bottom: 14px;
+      border: 1px solid var(--bp-border);
+    }
+    .mode-btn {
+      font-family: 'Space Grotesk', sans-serif;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--bp-muted);
+      padding: 9px 6px;
+      border-radius: 7px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .mode-btn:hover { color: var(--bp-text); }
+    .mode-btn.active-auto {
+      background: var(--bp-accent);
+      color: var(--bp-btn-text);
+      box-shadow: var(--bp-glow);
+    }
+    .mode-btn.active-entry {
+      background: var(--bp-success);
+      color: #03150e;
+      box-shadow: 0 0 16px rgba(var(--bp-success-rgb), 0.45);
+    }
+    .mode-btn.active-exit {
+      background: var(--bp-secondary);
+      color: #07060b;
+      box-shadow: 0 0 16px rgba(var(--bp-secondary-rgb), 0.45);
+    }
+
+    /* Scanner Input */
+    .scan-box-wrap { margin-bottom: 10px; }
+    .scan-indicator {
+      font-family: 'JetBrains Mono', monospace;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      font-weight: 600;
+      margin-bottom: 7px;
+      color: var(--bp-accent);
+    }
+    .scan-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--bp-success);
+      box-shadow: 0 0 10px var(--bp-success);
+      margin-right: 7px;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+    .scan-input-row { display: flex; gap: 8px; }
+    #scan-input {
+      flex: 1;
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--bp-bg-elevated);
+      border: 2px solid var(--bp-border-strong);
+      color: var(--bp-text);
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      outline: none;
+      text-transform: uppercase;
+      transition: all 0.2s;
+    }
+    #scan-input:focus {
+      border-color: var(--bp-accent);
+      box-shadow: var(--bp-glow);
+    }
+    #scan-input::placeholder {
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0;
+      color: var(--bp-muted);
+      text-transform: none;
+    }
+
+    .scanner-toggles {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-bottom: 14px;
+    }
+    .chip-toggle {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      padding: 5px 10px;
+      border-radius: 7px;
+      border: 1px solid var(--bp-border);
+      background: var(--bp-bg-elevated);
+      color: var(--bp-muted);
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.15s;
+    }
+    .chip-toggle.on {
+      border-color: var(--bp-accent);
+      color: var(--bp-accent);
+      background: rgba(var(--bp-accent-rgb), 0.12);
+    }
+
+    /* Result Card */
+    .result-card {
+      position: relative;
+      border-radius: 11px;
+      border: 1px solid var(--bp-border-strong);
+      background: var(--bp-bg-elevated);
+      overflow: hidden;
+    }
+    .result-banner {
+      font-family: 'Orbitron', 'Space Grotesk', sans-serif;
+      padding: 11px 14px;
+      font-weight: 800;
+      font-size: 13px;
+      letter-spacing: 0.8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+      z-index: 3;
+    }
+    .banner-idle { background: rgba(var(--bp-accent-rgb), 0.12); color: var(--bp-accent); border-bottom: 1px solid var(--bp-border); }
+    .banner-entry { background: var(--bp-success); color: #022c22; }
+    .banner-exit { background: var(--bp-accent); color: var(--bp-btn-text); }
+    .banner-warn { background: var(--bp-secondary); color: #090500; }
+    .banner-error { background: var(--bp-danger); color: #ffffff; }
+    .banner-already-inside {
+      background: #dc2626 !important;
+      color: #ffffff !important;
+      border-bottom: 2px solid #ef4444 !important;
+      box-shadow: 0 0 18px rgba(220, 38, 38, 0.45) !important;
+      animation: alertPulseBanner 1.4s infinite alternate ease-in-out;
+    }
+    @keyframes alertPulseBanner {
+      0% { background: #dc2626; box-shadow: 0 0 14px rgba(220, 38, 38, 0.4); }
+      100% { background: #991b1b; box-shadow: 0 0 24px rgba(239, 68, 68, 0.7); }
+    }
+    .card-alert-red {
+      border: 2px solid #ef4444 !important;
+      box-shadow: 0 0 30px rgba(239, 68, 68, 0.55) !important;
+    }
+    .photo-alert-red {
+      border-color: #ef4444 !important;
+      box-shadow: 0 0 22px rgba(239, 68, 68, 0.7) !important;
+    }
+
+    .result-body {
+      padding: 14px;
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      position: relative;
+      z-index: 3;
+    }
+    .result-photo {
+      width: 114px;
+      height: 142px;
+      border-radius: 9px;
+      border: 2px solid var(--bp-border-strong);
+      box-shadow: var(--bp-glow);
+      object-fit: cover;
+      background: var(--bp-surface-solid);
+      flex-shrink: 0;
+    }
+    .result-info { flex: 1; min-width: 0; }
+    .role-badge {
+      font-family: 'JetBrains Mono', monospace;
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      padding: 3px 8px;
+      border-radius: 5px;
+      background: rgba(var(--bp-accent-rgb), 0.14);
+      border: 1px solid var(--bp-border);
+      color: var(--bp-accent);
+      margin-bottom: 6px;
+    }
+    .result-name {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--bp-text);
+      line-height: 1.2;
+      word-break: break-word;
+    }
+    .result-desig {
+      font-size: 13px;
+      color: var(--bp-text-soft);
+      margin-top: 3px;
+    }
+    .result-comp {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--bp-secondary);
+      margin-top: 4px;
+    }
+    .result-meta {
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px dashed var(--bp-border);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--bp-muted);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5px 10px;
+    }
+    .result-meta strong { color: var(--bp-text); }
+
+    .result-actions {
+      padding: 0 14px 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      position: relative;
+      z-index: 3;
+    }
+
+    /* Family Group Panel */
+    .family-box {
+      margin-top: 14px;
+      border-top: 1px solid var(--bp-border);
+      padding-top: 12px;
+    }
+    .family-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      color: var(--bp-accent);
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .family-list { display: flex; flex-direction: column; gap: 6px; }
+    .family-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bp-bg-elevated);
+      border: 1px solid var(--bp-border);
+      padding: 7px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+    }
+    .family-item.is-current { border-color: var(--bp-accent); box-shadow: inset 0 0 10px rgba(var(--bp-accent-rgb), 0.12); }
+
+    .status-pill {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 5px;
+      text-transform: uppercase;
+      border: 1px solid transparent;
+    }
+    .st-inside { background: rgba(var(--bp-success-rgb), 0.16); color: var(--bp-success); border-color: rgba(var(--bp-success-rgb), 0.4); }
+    .st-exited { background: rgba(var(--bp-secondary-rgb), 0.16); color: var(--bp-secondary); border-color: rgba(var(--bp-secondary-rgb), 0.4); }
+    .st-outside { background: rgba(148,163,184,0.12); color: var(--bp-muted); border-color: rgba(148,163,184,0.25); }
+
+    /* Tabs & Tables */
+    .tabs {
+      display: flex;
+      gap: 8px;
+      border-bottom: 1px solid var(--bp-border);
+      padding-bottom: 12px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .tab-btns { display: flex; gap: 6px; }
+    .tab-btn {
+      font-family: 'Space Grotesk', sans-serif;
+      background: var(--bp-bg-elevated);
+      border: 1px solid var(--bp-border);
+      color: var(--bp-text-soft);
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .tab-btn.active {
+      background: var(--bp-accent);
+      color: var(--bp-btn-text);
+      border-color: var(--bp-accent);
+      box-shadow: var(--bp-glow);
+    }
+
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .search-input {
+      flex: 1;
+      min-width: 190px;
+      background: var(--bp-bg-elevated);
+      border: 1px solid var(--bp-border);
+      color: var(--bp-text);
+      padding: 9px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      outline: none;
+    }
+    .search-input:focus { border-color: var(--bp-accent); }
+    .filter-select {
+      background: var(--bp-bg-elevated);
+      border: 1px solid var(--bp-border);
+      color: var(--bp-text);
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      max-height: 620px;
+      overflow-y: auto;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th {
+      font-family: 'JetBrains Mono', monospace;
+      text-align: left;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      color: var(--bp-accent);
+      padding: 10px 10px;
+      border-bottom: 1px solid var(--bp-border-strong);
+      background: var(--bp-surface-solid);
+      position: sticky;
+      top: 0;
+      z-index: 5;
+    }
+    td {
+      padding: 9px 10px;
+      border-bottom: 1px solid rgba(var(--bp-accent-rgb), 0.1);
+      vertical-align: middle;
+    }
+    tr:hover td { background: rgba(var(--bp-accent-rgb), 0.05); }
+
+    .mini-avatar {
+      width: 34px;
+      height: 42px;
+      border-radius: 5px;
+      object-fit: cover;
+      border: 1px solid var(--bp-border-strong);
+      background: var(--bp-bg-elevated);
+      vertical-align: middle;
+    }
+
+    /* Modals */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 16, 0.8);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: none;
+      place-items: center;
+      z-index: 100;
+      padding: 16px;
+    }
+    [data-theme="light"] .modal-backdrop { background: rgba(15, 23, 42, 0.55); }
+    .modal-backdrop.open { display: grid; }
+    .modal-card {
+      background: var(--bp-surface-solid);
+      border: 1px solid var(--bp-border-strong);
+      box-shadow: var(--bp-shadow);
+      border-radius: 14px;
+      max-width: 480px;
+      width: 100%;
+      padding: 20px;
+    }
+    .modal-alert-card {
+      background: var(--bp-surface-solid);
+      border: 2px solid #ef4444 !important;
+      box-shadow: 0 0 45px rgba(239, 68, 68, 0.6), 0 25px 50px rgba(0, 0, 0, 0.85) !important;
+      border-radius: 14px;
+      max-width: 520px;
+      width: 100%;
+      padding: 22px;
+      animation: modalPop 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes modalPop {
+      0% { transform: scale(0.92); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .modal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .modal-head h3 {
+      margin: 0;
+      font-family: 'Orbitron', 'Space Grotesk', sans-serif;
+      color: var(--bp-accent);
+      font-size: 16px;
+    }
+    .qr-box {
+      background: #ffffff;
+      padding: 14px;
+      border-radius: 10px;
+      border: 2px solid var(--bp-accent);
+      display: inline-block;
+      margin: 10px auto;
+    }
+    .url-box {
+      background: var(--bp-bg-elevated);
+      border: 1px solid var(--bp-border);
+      padding: 10px;
+      border-radius: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      color: var(--bp-accent);
+      word-break: break-all;
+      margin: 8px 0;
+    }
+
+    video#cam-preview {
+      width: 100%;
+      border-radius: 10px;
+      background: #000;
+      max-height: 300px;
+      object-fit: cover;
+      border: 1px solid var(--bp-border);
+    }
+
+    @media (max-width: 980px) {
+      .main-grid { grid-template-columns: 1fr; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 540px) {
+      .container { padding: 10px; }
+      .topbar { padding: 10px 12px; }
+      .brand h1 { font-size: 13px; }
+      .stat-value { font-size: 24px; }
+      .result-body { flex-direction: row; gap: 12px; }
+      .result-photo { width: 88px; height: 110px; }
+      .result-name { font-size: 16px; }
+      .result-meta { grid-template-columns: 1fr; }
+      .gate-input { width: 108px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-badge">BSAA</div>
+      <div>
+        <h1>BSAA FAMILY NIGHT 2026 // GATE ACCESS</h1>
+        <div class="brand-sub">
+          <span>KHULNA CLUB</span>
+          <span id="mode-pill" class="pill-status">● LIVE SYNC</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="top-actions">
+      <div class="theme-pills" title="Switch Studio Theme">
+        <button class="theme-dot active" id="th-cyan" style="background:#00f0ff;color:#030712;" onclick="setTheme('cyan')" title="Blueprint Cyan">C</button>
+        <button class="theme-dot" id="th-gold" style="background:#f59e0b;color:#07060b;" onclick="setTheme('gold')" title="Royal Gold">G</button>
+        <button class="theme-dot" id="th-crimson" style="background:#fb7185;color:#09040b;" onclick="setTheme('crimson')" title="Crimson">R</button>
+        <button class="theme-dot" id="th-light" style="background:#eef5fc;color:#0284c7;" onclick="setTheme('light')" title="Daylight">L</button>
+      </div>
+      <input id="gate-name-input" class="gate-input" type="text" value="Main Gate" title="Gate / Device Name" placeholder="Gate Name" />
+      <button id="btn-connect-mobile" class="btn" style="display:none;" onclick="openMobileModal()">📱 Mobile Sync</button>
+      <button class="btn btn-primary" onclick="exportReport('csv')">⬇ CSV</button>
+      <button id="btn-export-xlsx" class="btn btn-primary" style="display:none;" onclick="exportReport('xlsx')">⬇ Excel</button>
+      <button class="btn" onclick="toggleFullscreen()">⛶</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- KPI Stats -->
+    <section class="stats-grid">
+      <div class="bp-card bp-ticks stat-card">
+        <div class="stat-label">STATUS // INSIDE</div>
+        <div class="stat-value" id="st-inside" style="color: var(--bp-success);">0</div>
+        <div class="stat-sub">Currently inside venue</div>
+      </div>
+      <div class="bp-card bp-ticks stat-card">
+        <div class="stat-label">CHECKED IN // TOTAL</div>
+        <div class="stat-value" id="st-checked" style="color: var(--bp-accent);">0</div>
+        <div class="stat-sub" id="st-checked-pct">0% of 377</div>
+      </div>
+      <div class="bp-card bp-ticks stat-card">
+        <div class="stat-label">STATUS // EXITED</div>
+        <div class="stat-value" id="st-exited" style="color: var(--bp-secondary);">0</div>
+        <div class="stat-sub">Checked out</div>
+      </div>
+      <div class="bp-card bp-ticks stat-card">
+        <div class="stat-label">PENDING // ARRIVAL</div>
+        <div class="stat-value" id="st-outside" style="color: var(--bp-text-soft);">377</div>
+        <div class="stat-sub">Out of 377 registered</div>
+      </div>
+    </section>
+
+    <div class="bp-card role-strip">
+      <div>LIVE BREAKDOWN //
+        <strong>PARTICIPANTS:</strong> <span id="cat-p">0/136</span> &nbsp;|&nbsp;
+        <strong>SPOUSES:</strong> <span id="cat-s">0/97</span> &nbsp;|&nbsp;
+        <strong>CHILDREN:</strong> <span id="cat-c">0/144</span>
+      </div>
+      <div>HARDWARE // <strong>WNL-S011-USB (HID READY)</strong></div>
+    </div>
+
+    <div class="main-grid">
+      <!-- Left: Scanner & Result Hero -->
+      <section class="bp-card bp-ticks panel">
+        <div class="mode-switch">
+          <button class="mode-btn active-auto" id="m-auto" onclick="setGateMode('auto')">AUTO<br><small>Entry ↔ Exit</small></button>
+          <button class="mode-btn" id="m-entry" onclick="setGateMode('entry')">ENTRY<br><small>Check-In Only</small></button>
+          <button class="mode-btn" id="m-exit" onclick="setGateMode('exit')">EXIT<br><small>Check-Out Only</small></button>
+        </div>
+
+        <div class="scan-box-wrap">
+          <div class="scan-indicator">
+            <span><span class="scan-dot"></span>SCANNER_READY // PULL WNL-S011-USB TRIGGER</span>
+            <span id="cooldown-badge">COOLDOWN: 5s</span>
+          </div>
+          <div class="scan-input-row">
+            <input
+              id="scan-input"
+              type="text"
+              inputmode="none"
+              autocomplete="off"
+              autocapitalize="characters"
+              spellcheck="false"
+              placeholder="Scan barcode or type BSAA 001 A..."
+              autofocus
+            />
+            <button class="btn btn-primary" onclick="submitInputScan()">GO</button>
+          </div>
+        </div>
+
+        <div class="scanner-toggles">
+          <button id="tog-kbd" class="chip-toggle" onclick="toggleMobileKeyboard()">⌨ Phone Keyboard: OFF (OTG)</button>
+          <button id="tog-sound" class="chip-toggle on" onclick="toggleSound()">🔊 Sound: ON</button>
+          <button id="tog-cooldown" class="chip-toggle on" onclick="toggleCooldown()">🛡 5s Guard: ON</button>
+          <button id="tog-cam" class="chip-toggle" onclick="openCameraModal()">📷 Camera Scan</button>
+        </div>
+
+        <!-- Latest Scan Result -->
+        <div class="result-card" id="result-card">
+          <div class="bp-scanline"></div>
+          <div class="result-banner banner-idle" id="res-banner">
+            <span>TERMINAL // READY FOR SCAN</span>
+            <span id="res-time">--:--:--</span>
+          </div>
+          <div class="result-body">
+            <img id="res-photo" class="result-photo" alt="Photo" src="" style="display:none;" />
+            <div id="res-photo-placeholder" class="result-photo font-mono-cad" style="display:grid;place-items:center;color:var(--bp-accent);font-weight:700;font-size:12px;text-align:center;">
+              SCAN<br>ID CARD
+            </div>
+            <div class="result-info">
+              <div class="role-badge" id="res-role">STANDBY // WAITING</div>
+              <div class="result-name" id="res-name">Point WNL-S011-USB at ID Barcode</div>
+              <div class="result-desig" id="res-desig">Supports Participants, Spouses &amp; Children</div>
+              <div class="result-comp" id="res-comp">Bangladesh Shipping Agents' Association</div>
+              <div class="result-meta" id="res-meta" style="display:none;">
+                <div>SERIAL: <strong id="res-serial">-</strong></div>
+                <div>PHONE: <strong id="res-phone">-</strong></div>
+                <div>ENTRY: <strong id="res-entry">-</strong></div>
+                <div>EXIT: <strong id="res-exit">-</strong></div>
+              </div>
+            </div>
+          </div>
+          <div class="result-actions" id="res-actions" style="display:none;"></div>
+        </div>
+
+        <!-- Family Group Status -->
+        <div class="family-box" id="family-box" style="display:none;">
+          <div class="family-title" id="family-title">Family Group Status</div>
+          <div class="family-list" id="family-list"></div>
+        </div>
+      </section>
+
+      <!-- Right: Live Feed & Full Directory -->
+      <section class="bp-card bp-ticks panel">
+        <div class="tabs">
+          <div class="tab-btns">
+            <button class="tab-btn active" id="tab-logs-btn" onclick="switchTab('logs')">📋 LIVE LOG (<span id="log-count">0</span>)</button>
+            <button class="tab-btn" id="tab-dir-btn" onclick="switchTab('dir')">👥 DIRECTORY (<span id="dir-count">377</span>)</button>
+          </div>
+          <div>
+            <button class="btn btn-danger" onclick="resetLogs()">🗑 Reset Logs</button>
+          </div>
+        </div>
+
+        <!-- Tab 1: Live Scan Log -->
+        <div id="tab-logs">
+          <div class="filter-bar">
+            <input id="log-search" class="search-input" type="text" placeholder="Filter logs by name, serial, company, gate..." oninput="renderLogs()" />
+            <select id="log-action-filter" class="filter-select" onchange="renderLogs()">
+              <option value="all">All Actions</option>
+              <option value="ENTRY">ENTRY Only</option>
+              <option value="EXIT">EXIT Only</option>
+            </select>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Attendee</th>
+                  <th>Serial</th>
+                  <th>Action</th>
+                  <th>Gate</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="logs-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Tab 2: Full Directory -->
+        <div id="tab-dir" style="display:none;">
+          <div class="filter-bar">
+            <input id="dir-search" class="search-input" type="text" placeholder="Search Name, Serial (BSAA 001), Phone, Company..." oninput="renderDirectory()" />
+            <select id="dir-status-filter" class="filter-select" onchange="renderDirectory()">
+              <option value="all">All Statuses</option>
+              <option value="inside">Currently Inside</option>
+              <option value="exited">Exited</option>
+              <option value="outside">Not Yet Arrived</option>
+            </select>
+            <select id="dir-role-filter" class="filter-select" onchange="renderDirectory()">
+              <option value="all">All Categories</option>
+              <option value="Participant">Participants (136)</option>
+              <option value="Spouse">Spouses (97)</option>
+              <option value="Child">Children (144)</option>
+            </select>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Photo</th>
+                  <th>Attendee</th>
+                  <th>Serial</th>
+                  <th>Status</th>
+                  <th>Entry / Exit</th>
+                  <th>Manual</th>
+                </tr>
+              </thead>
+              <tbody id="dir-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Security Alert Modal: ALREADY INSIDE -->
+  <div class="modal-backdrop" id="alert-modal" onclick="if(event.target===this) closeAlertModal()">
+    <div class="modal-alert-card">
+      <div class="modal-head" style="border-bottom: 2px solid rgba(239, 68, 68, 0.35); padding-bottom: 12px; margin-bottom: 14px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:24px;filter:drop-shadow(0 0 8px #ef4444);">🚨</span>
+          <div>
+            <h3 style="color:#ef4444;font-family:'Orbitron','Space Grotesk',sans-serif;font-size:16px;letter-spacing:1px;margin:0;">
+              SECURITY ALERT: ALREADY INSIDE
+            </h3>
+            <span class="font-mono-cad" style="font-size:11px;color:rgba(239,68,68,0.85);font-weight:600;">GATE ENTRY DENIED // DUPLICATE DETECTED</span>
+          </div>
+        </div>
+        <button class="btn btn-danger" onclick="closeAlertModal()" style="padding:4px 10px;font-size:15px;line-height:1;">✕</button>
+      </div>
+
+      <div style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.35);border-radius:8px;padding:10px 12px;margin-bottom:14px;color:#fecaca;font-size:12.5px;line-height:1.45;">
+        <strong style="color:#ef4444;font-family:'Space Grotesk',sans-serif;">ATTENTION GATE OPERATOR:</strong>
+        This attendee was already admitted inside the venue. Double entry is blocked to prevent passback or badge sharing.
+      </div>
+
+      <div style="display:flex;gap:14px;align-items:center;background:var(--bp-bg-elevated);border:1px solid var(--bp-border);border-radius:10px;padding:12px;margin-bottom:16px;">
+        <img id="alert-photo" src="" alt="Photo" style="width:90px;height:114px;border-radius:8px;object-fit:cover;border:2px solid #ef4444;box-shadow:0 0 16px rgba(239,68,68,0.5);background:var(--bp-surface-solid);display:none;" />
+        <div id="alert-photo-placeholder" class="font-mono-cad" style="width:90px;height:114px;border-radius:8px;border:2px solid #ef4444;display:grid;place-items:center;text-align:center;font-size:11px;color:#ef4444;font-weight:700;background:var(--bp-surface-solid);">NO<br>PHOTO</div>
+        <div style="flex:1;min-width:0;">
+          <div id="alert-role" class="role-badge" style="background:rgba(239,68,68,0.18);color:#fca5a5;border-color:rgba(239,68,68,0.45);display:inline-block;margin-bottom:4px;">SPOUSE // SL #059</div>
+          <div id="alert-name" style="font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;color:#ffffff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Attendee Name</div>
+          <div id="alert-desig" style="font-size:12px;color:var(--bp-text-soft);margin-top:2px;">Designation / Relation</div>
+          <div id="alert-comp" style="font-size:12px;color:var(--bp-secondary);font-weight:600;margin-top:2px;">Company Name</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px;font-family:'JetBrains Mono',monospace;font-size:11px;">
+            <div style="background:var(--bp-surface-solid);padding:4px 6px;border-radius:4px;border:1px solid var(--bp-border);">SERIAL: <strong id="alert-serial" style="color:var(--bp-accent);">-</strong></div>
+            <div style="background:rgba(239,68,68,0.18);padding:4px 6px;border-radius:4px;border:1px solid rgba(239,68,68,0.45);">ENTRY: <strong id="alert-entry" style="color:#ef4444;">-</strong></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="display:flex;gap:8px;">
+          <button id="alert-exit-btn" class="btn btn-primary" style="flex:1;padding:10px 12px;font-size:12px;" onclick="alertMarkExit()">
+            🔵 Mark EXIT Instead
+          </button>
+          <button id="alert-override-btn" class="btn btn-secondary" style="flex:1;padding:10px 12px;font-size:12px;color:#fca5a5;border-color:rgba(239,68,68,0.45);" onclick="alertForceEntry()">
+            ⚠️ Force Entry (Override)
+          </button>
+        </div>
+        <button id="alert-dismiss-btn" class="btn btn-danger" style="width:100%;padding:11px;font-weight:700;font-size:13px;" onclick="closeAlertModal()">
+          ✕ DISMISS ALERT (Enter / Esc)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Connect Mobile Modal -->
+  <div class="modal-backdrop" id="mobile-modal" onclick="if(event.target===this) closeMobileModal()">
+    <div class="modal-card" style="text-align:center;">
+      <div class="modal-head">
+        <h3>📱 MOBILE LIVE SYNC</h3>
+        <button class="btn" onclick="closeMobileModal()">✕</button>
+      </div>
+      <p style="font-size:13px;color:var(--bp-text-soft);margin-top:0;">
+        Connect your phone to the same Wi-Fi as this PC, scan the QR code or open the link below, and plug <strong>WNL-S011-USB</strong> via USB-OTG!
+      </p>
+      <div id="qr-container" class="qr-box"></div>
+      <div id="mobile-urls"></div>
+      <p class="font-mono-cad" style="font-size:11px;color:var(--bp-muted);margin-bottom:0;">
+        REAL-TIME SYNC ACTIVE ACROSS ALL DEVICES
+      </p>
+    </div>
+  </div>
+
+  <!-- Camera Scanner Modal -->
+  <div class="modal-backdrop" id="cam-modal" onclick="if(event.target===this) closeCameraModal()">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h3>📷 CAMERA BARCODE SCANNER</h3>
+        <button class="btn" onclick="closeCameraModal()">✕</button>
+      </div>
+      <video id="cam-preview" playsinline muted></video>
+      <p id="cam-status" class="font-mono-cad" style="font-size:12px;color:var(--bp-text-soft);margin:10px 0 0;">Starting camera...</p>
+    </div>
+  </div>
+
+  <script>
+    const APP_MODE = "__APP_MODE__"; // "server" or "standalone"
+    const EMBEDDED_ATTENDEES = __EMBEDDED_ATTENDEES__;
+    const EMBEDDED_PHOTOS = __EMBEDDED_PHOTOS__;
+
+    let attendees = [];
+    let attendeeBySerial = {};
+    let attendeeByCompact = {};
+    let familyGroups = {};
+    let statusMap = {};
+    let scanLogs = [];
+    let stateVersion = 0;
+
+    let gateMode = "auto";
+    let soundOn = true;
+    let cooldownSec = 5;
+    let allowVirtualKeyboard = false;
+    let lastShownSerial = null;
+    let recentLocalScans = {};
+
+    // Theme switching matching The Blueprint system
+    function setTheme(theme) {
+      document.documentElement.setAttribute("data-theme", theme);
+      localStorage.setItem("bsaa_bp_theme", theme);
+      for (const t of ["cyan", "gold", "crimson", "light"]) {
+        const el = document.getElementById(`th-${t}`);
+        if (el) el.classList.toggle("active", t === theme);
+      }
+    }
+
+    // Web Audio API Synthesizer
+    let audioCtx = null;
+    function playTone(type) {
+      if (!soundOn) return;
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === "suspended") audioCtx.resume();
+        const now = audioCtx.currentTime;
+        const beep = (freq, start, dur, wave = "sine", vol = 0.25) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = wave;
+          osc.frequency.setValueAtTime(freq, now + start);
+          gain.gain.setValueAtTime(vol, now + start);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + start + dur);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now + start);
+          osc.stop(now + start + dur);
+        };
+        if (type === "entry") { beep(880, 0, 0.11, "sine", 0.28); beep(1318.5, 0.11, 0.18, "sine", 0.30); }
+        else if (type === "exit") { beep(784, 0, 0.11, "sine", 0.24); beep(523.25, 0.11, 0.2, "sine", 0.25); }
+        else if (type === "alert") {
+          beep(820, 0, 0.12, "sawtooth", 0.38);
+          beep(520, 0.13, 0.12, "sawtooth", 0.38);
+          beep(820, 0.26, 0.18, "sawtooth", 0.42);
+        }
+        else if (type === "warn") { beep(587.3, 0, 0.12, "triangle", 0.25); beep(587.3, 0.16, 0.14, "triangle", 0.25); }
+        else { beep(220, 0, 0.28, "sawtooth", 0.22); }
+      } catch (e) {}
+    }
+
+    function triggerFlash(cls) {
+      document.body.classList.remove("flash-entry", "flash-exit", "flash-warn", "flash-error");
+      void document.body.offsetWidth;
+      document.body.classList.add(cls);
+    }
+
+    async function initApp() {
+      const savedTheme = localStorage.getItem("bsaa_bp_theme") || "cyan";
+      setTheme(savedTheme);
+
+      const gateInput = document.getElementById("gate-name-input");
+      const savedGate = localStorage.getItem("bsaa_gate_name");
+      if (savedGate) gateInput.value = savedGate;
+      else if (/Android|iPhone|iPad/i.test(navigator.userAgent)) gateInput.value = "Mobile Gate";
+      else gateInput.value = "Main Gate PC";
+      gateInput.addEventListener("change", () => localStorage.setItem("bsaa_gate_name", gateInput.value.trim() || "Gate"));
+
+      if (APP_MODE === "server") {
+        document.getElementById("mode-pill").textContent = "● LIVE SYNC";
+        document.getElementById("btn-connect-mobile").style.display = "inline-flex";
+        document.getElementById("btn-export-xlsx").style.display = "inline-flex";
+        await fetchServerState(true);
+        setInterval(() => fetchServerState(false), 1200);
+      } else {
+        const pill = document.getElementById("mode-pill");
+        pill.textContent = "● OFFLINE STANDALONE";
+        pill.classList.add("offline");
+        loadAttendeesList(EMBEDDED_ATTENDEES);
+        loadLocalLogs();
+        recomputeStandaloneState();
+        renderAll();
+      }
+      setupHardwareScanner();
+    }
+
+    function loadAttendeesList(list) {
+      attendees = list || [];
+      attendeeBySerial = {};
+      attendeeByCompact = {};
+      familyGroups = {};
+      for (const a of attendees) {
+        attendeeBySerial[a.serial.toUpperCase()] = a;
+        attendeeByCompact[a.serial_compact] = a;
+        if (!familyGroups[a.family_id]) familyGroups[a.family_id] = [];
+        familyGroups[a.family_id].push(a);
+      }
+      document.getElementById("dir-count").textContent = attendees.length;
+    }
+
+    async function fetchServerState(force = false) {
+      try {
+        const res = await fetch(`/api/state?since_version=${force ? -1 : stateVersion}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        document.getElementById("mode-pill").textContent = "● LIVE SYNC";
+        if (data.unchanged) return;
+        if (data.attendees && data.attendees.length) loadAttendeesList(data.attendees);
+        statusMap = data.status_map || {};
+        scanLogs = data.logs || [];
+        stateVersion = data.version || 0;
+        renderAll();
+        if (lastShownSerial && attendeeBySerial[lastShownSerial]) renderFamilyBox(attendeeBySerial[lastShownSerial]);
+      } catch (e) {
+        document.getElementById("mode-pill").textContent = "○ RECONNECTING...";
+      }
+    }
+
+    function loadLocalLogs() {
+      try { scanLogs = JSON.parse(localStorage.getItem("bsaa_gate_logs_v1") || "[]"); }
+      catch { scanLogs = []; }
+    }
+    function saveLocalLogs() { localStorage.setItem("bsaa_gate_logs_v1", JSON.stringify(scanLogs)); }
+    function recomputeStandaloneState() {
+      statusMap = {};
+      for (const a of attendees) statusMap[a.serial] = { status: "outside", last_entry: null, last_exit: null, scan_count: 0 };
+      for (const log of [...scanLogs].reverse()) {
+        const st = statusMap[log.serial];
+        if (!st) continue;
+        st.scan_count += 1;
+        if (log.action === "ENTRY") { st.status = "inside"; st.last_entry = log.timestamp; }
+        else if (log.action === "EXIT") { st.status = "exited"; st.last_exit = log.timestamp; }
+      }
+    }
+
+    function resolveAttendee(rawCode) {
+      if (!rawCode) return null;
+      let clean = String(rawCode).trim().replace(/^\*+|\*+$/g, "").replace(/\s+/g, " ").toUpperCase();
+      if (attendeeBySerial[clean]) return attendeeBySerial[clean];
+      let compact = clean.replace(/[^A-Z0-9]/g, "");
+      if (attendeeByCompact[compact]) return attendeeByCompact[compact];
+      const m = compact.match(/^(?:BSAA|BSSA)?0*(\d+)([A-Z])$/);
+      if (m) {
+        const normalized = `BSAA${m[1].padStart(3, "0")}${m[2]}`;
+        if (attendeeByCompact[normalized]) return attendeeByCompact[normalized];
+      }
+      return null;
+    }
+
+    function formatNowTime() { return new Date().toLocaleTimeString([], { hour12: true, hour: "2-digit", minute: "2-digit", second: "2-digit" }); }
+    function formatIsoLocal() {
+      const d = new Date(), p = (n) => String(n).padStart(2, "0");
+      return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+    }
+
+    async function processScan(rawCode, overrideAction = null, isManual = false) {
+      const trimmed = String(rawCode || "").trim();
+      if (!trimmed) return;
+      const gateName = (document.getElementById("gate-name-input").value || "Gate").trim();
+
+      if (APP_MODE === "server") {
+        try {
+          const res = await fetch("/api/scan", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              raw_code: trimmed,
+              mode: overrideAction ? (overrideAction === "ENTRY" ? "entry_force" : "exit_force") : gateMode,
+              cooldown_sec: overrideAction ? 0 : cooldownSec,
+              gate_name: gateName,
+              manual: isManual
+            })
+          });
+          const data = await res.json();
+          if (data.status_map) statusMap = data.status_map;
+          if (data.logs) scanLogs = data.logs;
+          if (data.version) stateVersion = data.version;
+          handleScanResultUI(data);
+          renderAll();
+        } catch (err) {
+          handleScanResultUI({ ok: false, outcome: "INVALID", raw_code: trimmed, message: "Network error reaching PC server" });
+        }
+        return;
+      }
+
+      const person = resolveAttendee(trimmed);
+      if (!person) {
+        handleScanResultUI({ ok: false, outcome: "INVALID", raw_code: trimmed, message: "Barcode not found in BSAA database" });
+        return;
+      }
+      const st = statusMap[person.serial] || { status: "outside", last_entry: null, last_exit: null, scan_count: 0 };
+      const nowMs = Date.now();
+      if (!overrideAction && cooldownSec > 0 && recentLocalScans[person.serial]) {
+        const diffSec = (nowMs - recentLocalScans[person.serial]) / 1000;
+        if (diffSec < cooldownSec) {
+          handleScanResultUI({ ok: false, outcome: "COOLDOWN", attendee: person, attendee_state: st, message: `Double-scan blocked (${diffSec.toFixed(1)}s ago)` });
+          return;
+        }
+      }
+
+      let action = overrideAction;
+      if (!action) {
+        if (gateMode === "auto") action = st.status === "inside" ? "EXIT" : "ENTRY";
+        else if (gateMode === "entry") {
+          if (st.status === "inside") {
+            handleScanResultUI({ ok: false, outcome: "ALREADY_INSIDE", attendee: person, attendee_state: st, message: `Already INSIDE since ${st.last_entry ? st.last_entry.split(" ")[1] : "earlier"}` });
+            return;
+          }
+          action = "ENTRY";
+        } else if (gateMode === "exit") {
+          if (st.status !== "inside") {
+            handleScanResultUI({ ok: false, outcome: "NOT_INSIDE", attendee: person, attendee_state: st, message: "Not marked INSIDE yet" });
+            return;
+          }
+          action = "EXIT";
+        }
+      }
+
+      recentLocalScans[person.serial] = nowMs;
+      const newLog = { id: Date.now() + Math.floor(Math.random() * 1000), serial: person.serial, action, timestamp: formatIsoLocal(), gate: gateName, manual: isManual };
+      scanLogs.unshift(newLog);
+      saveLocalLogs();
+      recomputeStandaloneState();
+      handleScanResultUI({ ok: true, outcome: action, log_id: newLog.id, attendee: person, attendee_state: statusMap[person.serial], message: action === "ENTRY" ? "ENTRY GRANTED" : "EXIT RECORDED" });
+      renderAll();
+    }
+
+    function getPhotoSrc(person) {
+      if (!person || !person.photo) return null;
+      if (APP_MODE === "server") return `/static/photos/${person.photo}`;
+      return EMBEDDED_PHOTOS[person.serial] || null;
+    }
+
+    function handleScanResultUI(res) {
+      const banner = document.getElementById("res-banner");
+      const timeEl = document.getElementById("res-time");
+      const photoImg = document.getElementById("res-photo");
+      const photoPh = document.getElementById("res-photo-placeholder");
+      const metaEl = document.getElementById("res-meta");
+      const actionsEl = document.getElementById("res-actions");
+      const resultCard = document.getElementById("result-card");
+
+      // Reset special alert card styling
+      if (resultCard) resultCard.classList.remove("card-alert-red");
+      if (photoImg) photoImg.classList.remove("photo-alert-red");
+
+      timeEl.textContent = formatNowTime();
+      actionsEl.innerHTML = "";
+      actionsEl.style.display = "none";
+
+      if (res.outcome === "INVALID") {
+        closeAlertModal();
+        playTone("error"); triggerFlash("flash-error");
+        banner.className = "result-banner banner-error";
+        banner.firstElementChild.textContent = "❌ INVALID BARCODE";
+        photoImg.style.display = "none"; photoPh.style.display = "grid"; photoPh.innerHTML = "UNKNOWN<br>CARD";
+        document.getElementById("res-role").textContent = "UNRECOGNIZED";
+        document.getElementById("res-name").textContent = res.raw_code || "Unknown";
+        document.getElementById("res-desig").textContent = res.message || "Serial number not found";
+        document.getElementById("res-comp").textContent = "Please verify ID card or search Directory";
+        metaEl.style.display = "none";
+        document.getElementById("family-box").style.display = "none";
+        lastShownSerial = null;
+        return;
+      }
+
+      const p = res.attendee;
+      const st = res.attendee_state || statusMap[p.serial] || {};
+      lastShownSerial = p.serial;
+
+      if (res.outcome === "ENTRY") {
+        closeAlertModal();
+        playTone("entry"); triggerFlash("flash-entry");
+        banner.className = "result-banner banner-entry";
+        banner.firstElementChild.textContent = "✅ ENTRY GRANTED";
+      } else if (res.outcome === "EXIT") {
+        closeAlertModal();
+        playTone("exit"); triggerFlash("flash-exit");
+        banner.className = "result-banner banner-exit";
+        banner.firstElementChild.textContent = "🔵 EXIT RECORDED";
+      } else if (res.outcome === "ALREADY_INSIDE") {
+        playTone("alert"); triggerFlash("flash-error");
+        banner.className = "result-banner banner-already-inside";
+        banner.firstElementChild.textContent = `🚨 ${res.message || "Already INSIDE"}`;
+        if (resultCard) resultCard.classList.add("card-alert-red");
+        if (photoImg) photoImg.classList.add("photo-alert-red");
+        openAlertModal(p, st);
+      } else {
+        closeAlertModal();
+        playTone("warn"); triggerFlash("flash-warn");
+        banner.className = "result-banner banner-warn";
+        banner.firstElementChild.textContent = `⚠ ${res.message || res.outcome}`;
+      }
+
+      const pSrc = getPhotoSrc(p);
+      if (pSrc) { photoImg.src = pSrc; photoImg.style.display = "block"; photoPh.style.display = "none"; }
+      else { photoImg.style.display = "none"; photoPh.style.display = "grid"; photoPh.innerHTML = "NO<br>PHOTO"; }
+
+      document.getElementById("res-role").textContent = `${p.role} // SL #${String(p.sl).padStart(3, "0")}`;
+      document.getElementById("res-name").textContent = p.name;
+      document.getElementById("res-desig").textContent = p.designation || p.role;
+      document.getElementById("res-comp").textContent = p.company || "";
+      metaEl.style.display = "grid";
+      document.getElementById("res-serial").textContent = p.serial;
+      document.getElementById("res-phone").textContent = p.phone || "N/A";
+      document.getElementById("res-entry").textContent = st.last_entry ? st.last_entry.split(" ")[1] : "—";
+      document.getElementById("res-exit").textContent = st.last_exit ? st.last_exit.split(" ")[1] : "—";
+
+      actionsEl.style.display = "flex";
+      if (res.ok && res.log_id) {
+        const undoBtn = document.createElement("button");
+        undoBtn.className = "btn btn-danger";
+        undoBtn.textContent = "↩ Undo Scan";
+        undoBtn.onclick = () => undoLog(res.log_id);
+        actionsEl.appendChild(undoBtn);
+      }
+      if (res.outcome === "ALREADY_INSIDE") {
+        const exitBtn = document.createElement("button");
+        exitBtn.className = "btn btn-primary";
+        exitBtn.textContent = "Mark EXIT Instead";
+        exitBtn.onclick = () => processScan(p.serial, "EXIT", true);
+        actionsEl.appendChild(exitBtn);
+
+        const forceBtn = document.createElement("button");
+        forceBtn.className = "btn btn-secondary";
+        forceBtn.style.color = "#fca5a5";
+        forceBtn.style.borderColor = "rgba(239, 68, 68, 0.45)";
+        forceBtn.textContent = "⚠️ Force Entry (Override)";
+        forceBtn.onclick = () => processScan(p.serial, "ENTRY", true);
+        actionsEl.appendChild(forceBtn);
+      } else if (res.outcome === "NOT_INSIDE") {
+        const entryBtn = document.createElement("button");
+        entryBtn.className = "btn btn-primary";
+        entryBtn.textContent = "Mark ENTRY Instead";
+        entryBtn.onclick = () => processScan(p.serial, "ENTRY", true);
+        actionsEl.appendChild(entryBtn);
+      }
+      renderFamilyBox(p);
+    }
+
+    let activeAlertAttendee = null;
+
+    function openAlertModal(person, st) {
+      activeAlertAttendee = person;
+      const modal = document.getElementById("alert-modal");
+      if (!modal) return;
+
+      const pSrc = getPhotoSrc(person);
+      const photoImg = document.getElementById("alert-photo");
+      const photoPh = document.getElementById("alert-photo-placeholder");
+      if (pSrc) {
+        photoImg.src = pSrc;
+        photoImg.style.display = "block";
+        photoPh.style.display = "none";
+      } else {
+        photoImg.style.display = "none";
+        photoPh.style.display = "grid";
+      }
+
+      document.getElementById("alert-role").textContent = `${person.role} // SL #${String(person.sl).padStart(3, "0")}`;
+      document.getElementById("alert-name").textContent = person.name;
+      document.getElementById("alert-desig").textContent = person.designation || person.role;
+      document.getElementById("alert-comp").textContent = person.company || "BSAA Member";
+      document.getElementById("alert-serial").textContent = person.serial;
+      document.getElementById("alert-entry").textContent = st.last_entry ? st.last_entry.split(" ")[1] : "Earlier";
+
+      modal.classList.add("open");
+      setTimeout(() => {
+        const btn = document.getElementById("alert-dismiss-btn");
+        if (btn) btn.focus();
+      }, 50);
+    }
+
+    function closeAlertModal() {
+      const modal = document.getElementById("alert-modal");
+      if (modal) modal.classList.remove("open");
+      activeAlertAttendee = null;
+      const scanInput = document.getElementById("scan-input");
+      if (scanInput) scanInput.focus({ preventScroll: true });
+    }
+
+    function alertMarkExit() {
+      if (activeAlertAttendee) {
+        const serial = activeAlertAttendee.serial;
+        closeAlertModal();
+        processScan(serial, "EXIT", true);
+      }
+    }
+
+    function alertForceEntry() {
+      if (activeAlertAttendee) {
+        const serial = activeAlertAttendee.serial;
+        closeAlertModal();
+        processScan(serial, "ENTRY", true);
+      }
+    }
+
+    function renderFamilyBox(person) {
+      const box = document.getElementById("family-box");
+      const listEl = document.getElementById("family-list");
+      const members = familyGroups[person.family_id] || [];
+      if (!members.length) { box.style.display = "none"; return; }
+      box.style.display = "block";
+      document.getElementById("family-title").textContent = `FAMILY GROUP // ${person.family_id} (${members.length} MEMBER${members.length > 1 ? 'S' : ''})`;
+      listEl.innerHTML = "";
+      for (const m of members) {
+        const st = (statusMap[m.serial] || {}).status || "outside";
+        const row = document.createElement("div");
+        row.className = "family-item" + (m.serial === person.serial ? " is-current" : "");
+        const badgeCls = st === "inside" ? "st-inside" : st === "exited" ? "st-exited" : "st-outside";
+        const label = st === "inside" ? "INSIDE" : st === "exited" ? "EXITED" : "NOT ARRIVED";
+        row.innerHTML = `<div><strong>${escapeHtml(m.name)}</strong> <span class="font-mono-cad" style="color:var(--bp-muted);font-size:11px;">(${m.serial} • ${m.role})</span></div><span class="status-pill ${badgeCls}">${label}</span>`;
+        listEl.appendChild(row);
+      }
+    }
+
+    function setupHardwareScanner() {
+      const scanInput = document.getElementById("scan-input");
+      let wedgeBuf = "";
+      let lastKeyMs = 0;
+
+      scanInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          const val = scanInput.value;
+          scanInput.value = ""; wedgeBuf = "";
+          if (val.trim()) {
+            closeAlertModal();
+            processScan(val);
+          }
+        }
+      });
+
+      document.addEventListener("keydown", (e) => {
+        const alertModal = document.getElementById("alert-modal");
+        const isAlertOpen = alertModal && alertModal.classList.contains("open");
+
+        if (e.key === "Escape") {
+          if (isAlertOpen) { closeAlertModal(); return; }
+          if (document.getElementById("mobile-modal").classList.contains("open")) { closeMobileModal(); return; }
+          if (document.getElementById("cam-modal").classList.contains("open")) { closeCameraModal(); return; }
+        }
+
+        const active = document.activeElement;
+        const isTypingElsewhere = active && (active.id === "log-search" || active.id === "dir-search" || active.id === "gate-name-input");
+        if (isTypingElsewhere) return;
+
+        // If alert is open and user pressed Enter without a wedge buffer, dismiss alert
+        if (isAlertOpen && e.key === "Enter" && wedgeBuf.length < 3) {
+          e.preventDefault();
+          closeAlertModal();
+          return;
+        }
+
+        if (active === scanInput && !isAlertOpen) return;
+        if (e.ctrlKey || e.altKey || e.metaKey) return;
+
+        const now = Date.now();
+        if (now - lastKeyMs > 120) wedgeBuf = "";
+        lastKeyMs = now;
+
+        if (e.key === "Enter") {
+          if (wedgeBuf.length >= 3) {
+            e.preventDefault();
+            const code = wedgeBuf;
+            wedgeBuf = ""; scanInput.value = "";
+            if (isAlertOpen) closeAlertModal();
+            processScan(code);
+          } else wedgeBuf = "";
+          return;
+        }
+        if (e.key.length === 1) wedgeBuf += e.key;
+      });
+
+      document.addEventListener("click", (e) => {
+        const tag = e.target.tagName;
+        if (["INPUT", "SELECT", "BUTTON", "A"].includes(tag) || e.target.closest("button")) return;
+        if (document.querySelector(".modal-backdrop.open")) return;
+        scanInput.focus({ preventScroll: true });
+      });
+    }
+
+    function submitInputScan() {
+      const scanInput = document.getElementById("scan-input");
+      const val = scanInput.value;
+      scanInput.value = "";
+      if (val.trim()) processScan(val);
+      scanInput.focus({ preventScroll: true });
+    }
+
+    function setGateMode(mode) {
+      gateMode = mode;
+      document.getElementById("m-auto").className = "mode-btn" + (mode === "auto" ? " active-auto" : "");
+      document.getElementById("m-entry").className = "mode-btn" + (mode === "entry" ? " active-entry" : "");
+      document.getElementById("m-exit").className = "mode-btn" + (mode === "exit" ? " active-exit" : "");
+    }
+    function toggleMobileKeyboard() {
+      allowVirtualKeyboard = !allowVirtualKeyboard;
+      const el = document.getElementById("scan-input");
+      const btn = document.getElementById("tog-kbd");
+      el.setAttribute("inputmode", allowVirtualKeyboard ? "text" : "none");
+      btn.classList.toggle("on", allowVirtualKeyboard);
+      btn.textContent = allowVirtualKeyboard ? "⌨ Phone Keyboard: ON" : "⌨ Phone Keyboard: OFF (OTG)";
+      el.focus();
+    }
+    function toggleSound() {
+      soundOn = !soundOn;
+      const btn = document.getElementById("tog-sound");
+      btn.classList.toggle("on", soundOn);
+      btn.textContent = soundOn ? "🔊 Sound: ON" : "🔇 Sound: OFF";
+    }
+    function toggleCooldown() {
+      cooldownSec = cooldownSec > 0 ? 0 : 5;
+      const btn = document.getElementById("tog-cooldown");
+      btn.classList.toggle("on", cooldownSec > 0);
+      btn.textContent = cooldownSec > 0 ? "🛡 5s Guard: ON" : "🛡 5s Guard: OFF";
+      document.getElementById("cooldown-badge").textContent = cooldownSec > 0 ? `COOLDOWN: ${cooldownSec}s` : "COOLDOWN: OFF";
+    }
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
+      else document.exitFullscreen().catch(() => {});
+    }
+
+    function switchTab(tab) {
+      document.getElementById("tab-logs").style.display = tab === "logs" ? "block" : "none";
+      document.getElementById("tab-dir").style.display = tab === "dir" ? "block" : "none";
+      document.getElementById("tab-logs-btn").classList.toggle("active", tab === "logs");
+      document.getElementById("tab-dir-btn").classList.toggle("active", tab === "dir");
+    }
+
+    function renderAll() { renderStats(); renderLogs(); renderDirectory(); }
+
+    function renderStats() {
+      let inside = 0, exited = 0, outside = 0, checkedIn = 0;
+      let pIn = 0, sIn = 0, cIn = 0, pTot = 0, sTot = 0, cTot = 0;
+      for (const a of attendees) {
+        if (a.role === "Participant") pTot++;
+        else if (a.role === "Spouse") sTot++;
+        else cTot++;
+
+        const st = statusMap[a.serial] || { status: "outside" };
+        if (st.status === "inside") {
+          inside++;
+          if (a.role === "Participant") pIn++;
+          else if (a.role === "Spouse") sIn++;
+          else cIn++;
+        } else if (st.status === "exited") exited++;
+        else outside++;
+        if (st.last_entry || st.status === "inside" || st.status === "exited") checkedIn++;
+      }
+      document.getElementById("st-inside").textContent = inside;
+      document.getElementById("st-checked").textContent = checkedIn;
+      document.getElementById("st-exited").textContent = exited;
+      document.getElementById("st-outside").textContent = outside;
+      const pct = attendees.length ? Math.round((checkedIn / attendees.length) * 100) : 0;
+      document.getElementById("st-checked-pct").textContent = `${pct}% of ${attendees.length}`;
+      document.getElementById("cat-p").textContent = `${pIn}/${pTot}`;
+      document.getElementById("cat-s").textContent = `${sIn}/${sTot}`;
+      document.getElementById("cat-c").textContent = `${cIn}/${cTot}`;
+      document.getElementById("log-count").textContent = scanLogs.length;
+    }
+
+    function renderLogs() {
+      const q = (document.getElementById("log-search").value || "").trim().toLowerCase();
+      const actFilter = document.getElementById("log-action-filter").value;
+      const tbody = document.getElementById("logs-tbody");
+      tbody.innerHTML = "";
+
+      const filtered = scanLogs.filter(l => {
+        if (actFilter !== "all" && l.action !== actFilter) return false;
+        if (!q) return true;
+        const p = attendeeBySerial[l.serial.toUpperCase()] || {};
+        return `${l.serial} ${p.name || ""} ${p.company || ""} ${l.gate || ""}`.toLowerCase().includes(q);
+      });
+
+      const show = filtered.slice(0, 150);
+      if (!show.length) {
+        tbody.innerHTML = `<tr><td colspan="6" class="font-mono-cad" style="text-align:center;color:var(--bp-muted);padding:26px;">NO SCANS RECORDED YET // WAITING FOR TRIGGER</td></tr>`;
+        return;
+      }
+
+      for (const l of show) {
+        const p = attendeeBySerial[l.serial.toUpperCase()] || { name: l.serial, role: "", company: "" };
+        const tr = document.createElement("tr");
+        const timeShort = (l.timestamp || "").split(" ")[1] || l.timestamp;
+        const pillCls = l.action === "ENTRY" ? "st-inside" : "st-exited";
+        tr.innerHTML = `
+          <td class="font-mono-cad" style="white-space:nowrap;font-size:12px;">${escapeHtml(timeShort)}</td>
+          <td><div style="font-weight:700;color:var(--bp-text);">${escapeHtml(p.name)}</div><div style="font-size:11px;color:var(--bp-muted);">${escapeHtml(p.role)} • ${escapeHtml(p.company)}</div></td>
+          <td class="font-mono-cad" style="white-space:nowrap;font-weight:700;color:var(--bp-accent);">${escapeHtml(l.serial)}</td>
+          <td><span class="status-pill ${pillCls}">${l.action}</span></td>
+          <td class="font-mono-cad" style="font-size:11px;color:var(--bp-muted);">${escapeHtml(l.gate || "")}${l.manual ? " (Manual)" : ""}</td>
+          <td><button class="btn btn-danger" style="padding:4px 8px;font-size:10px;" onclick="undoLog(${l.id})">Undo</button></td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+
+    function renderDirectory() {
+      const q = (document.getElementById("dir-search").value || "").trim().toLowerCase();
+      const stFilter = document.getElementById("dir-status-filter").value;
+      const roleFilter = document.getElementById("dir-role-filter").value;
+      const tbody = document.getElementById("dir-tbody");
+      tbody.innerHTML = "";
+
+      const filtered = attendees.filter(a => {
+        const st = (statusMap[a.serial] || { status: "outside" }).status;
+        if (stFilter !== "all" && st !== stFilter) return false;
+        if (roleFilter !== "all" && a.role !== roleFilter) return false;
+        if (!q) return true;
+        return `${a.serial} ${a.name} ${a.company} ${a.phone} ${a.designation}`.toLowerCase().includes(q);
+      });
+
+      for (const a of filtered.slice(0, 200)) {
+        const stObj = statusMap[a.serial] || { status: "outside", last_entry: null, last_exit: null };
+        const st = stObj.status;
+        const pillCls = st === "inside" ? "st-inside" : st === "exited" ? "st-exited" : "st-outside";
+        const label = st === "inside" ? "INSIDE" : st === "exited" ? "EXITED" : "NOT ARRIVED";
+        const pSrc = getPhotoSrc(a);
+        const photoHtml = pSrc
+          ? `<img class="mini-avatar" src="${pSrc}" loading="lazy" alt="" />`
+          : `<div class="mini-avatar font-mono-cad" style="display:inline-grid;place-items:center;font-size:9px;color:var(--bp-muted);">NO</div>`;
+
+        const tr = document.createElement("tr");
+        const nextAction = st === "inside" ? "EXIT" : "ENTRY";
+        const btnText = st === "inside" ? "Check Out" : "Check In";
+        tr.innerHTML = `
+          <td>${photoHtml}</td>
+          <td><div style="font-weight:700;color:var(--bp-text);">${escapeHtml(a.name)}</div><div style="font-size:11px;color:var(--bp-muted);">${escapeHtml(a.designation || a.role)} • ${escapeHtml(a.company)}</div></td>
+          <td class="font-mono-cad" style="white-space:nowrap;font-weight:700;color:var(--bp-accent);">${escapeHtml(a.serial)}</td>
+          <td><span class="status-pill ${pillCls}">${label}</span></td>
+          <td class="font-mono-cad" style="font-size:11px;color:var(--bp-text-soft);white-space:nowrap;">In: ${stObj.last_entry ? stObj.last_entry.split(" ")[1] : "—"}<br>Out: ${stObj.last_exit ? stObj.last_exit.split(" ")[1] : "—"}</td>
+          <td><button class="btn" style="padding:5px 9px;font-size:10px;" onclick="processScan('${a.serial}', '${nextAction}', true)">${btnText}</button></td>
+        `;
+        tbody.appendChild(tr);
+      }
+      if (filtered.length > 200) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td colspan="6" class="font-mono-cad" style="text-align:center;color:var(--bp-muted);font-size:11px;">Showing first 200 of ${filtered.length} matches — narrow search above to see more.</td>`;
+        tbody.appendChild(tr);
+      }
+    }
+
+    async function undoLog(logId) {
+      if (APP_MODE === "server") {
+        const res = await fetch(`/api/logs/${logId}`, { method: "DELETE" });
+        if (res.ok) await fetchServerState(true);
+      } else {
+        scanLogs = scanLogs.filter(l => l.id !== logId);
+        saveLocalLogs(); recomputeStandaloneState(); renderAll();
+      }
+      if (lastShownSerial && attendeeBySerial[lastShownSerial]) renderFamilyBox(attendeeBySerial[lastShownSerial]);
+    }
+
+    async function resetLogs() {
+      if (!confirm("Clear ALL Entry & Exit scan logs? This cannot be undone.")) return;
+      if (APP_MODE === "server") { await fetch("/api/reset", { method: "POST" }); await fetchServerState(true); }
+      else { scanLogs = []; saveLocalLogs(); recomputeStandaloneState(); renderAll(); }
+    }
+
+    function exportReport(fmt) {
+      if (APP_MODE === "server") { window.location.href = `/api/export/${fmt}`; return; }
+      const headers = ["SL No", "Serial", "Name", "Category", "Designation/Relation", "Company", "Phone", "Current Status", "Last Entry", "Last Exit", "Total Scans"];
+      const lines = [headers.join(",")];
+      for (const a of attendees) {
+        const st = statusMap[a.serial] || { status: "outside", last_entry: "", last_exit: "", scan_count: 0 };
+        lines.push([a.sl, a.serial, a.name, a.role, a.designation, a.company, a.phone, st.status.toUpperCase(), st.last_entry || "", st.last_exit || "", st.scan_count || 0].map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(","));
+      }
+      const csvBlob = new Blob(["\uFEFF" + lines.join("\r\n")], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(csvBlob);
+      const aEl = document.createElement("a");
+      aEl.href = url;
+      aEl.download = `BSAA_Attendance_Report_${new Date().toISOString().slice(0,10)}.csv`;
+      aEl.click();
+      URL.revokeObjectURL(url);
+    }
+
+    async function openMobileModal() {
+      document.getElementById("mobile-modal").classList.add("open");
+      const urlsEl = document.getElementById("mobile-urls");
+      const qrEl = document.getElementById("qr-container");
+      urlsEl.innerHTML = "Loading network info..."; qrEl.innerHTML = "";
+      try {
+        const res = await fetch("/api/info");
+        const data = await res.json();
+        qrEl.innerHTML = data.qr_svg || "";
+        urlsEl.innerHTML = (data.urls || [window.location.href]).map(u => `<div class="url-box">${escapeHtml(u)}</div>`).join("");
+      } catch (e) {
+        urlsEl.innerHTML = `<div class="url-box">${escapeHtml(window.location.href)}</div>`;
+      }
+    }
+    function closeMobileModal() { document.getElementById("mobile-modal").classList.remove("open"); }
+
+    let camStream = null, camTimer = null;
+    async function openCameraModal() {
+      const modal = document.getElementById("cam-modal"), status = document.getElementById("cam-status"), video = document.getElementById("cam-preview");
+      modal.classList.add("open");
+      if (!("BarcodeDetector" in window)) {
+        status.textContent = "Native camera barcode detection is not supported here. Use WNL-S011-USB via USB/OTG or Chrome on Android.";
+        return;
+      }
+      try {
+        const detector = new BarcodeDetector({ formats: ["code_39", "code_128", "qr_code"] });
+        camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        video.srcObject = camStream; await video.play();
+        status.textContent = "Point camera at the ID Card barcode...";
+        let lastCamCode = "", lastCamTs = 0;
+        camTimer = setInterval(async () => {
+          if (!camStream) return;
+          try {
+            const barcodes = await detector.detect(video);
+            if (barcodes.length > 0) {
+              const code = barcodes[0].rawValue, now = Date.now();
+              if (code && (code !== lastCamCode || now - lastCamTs > 3500)) {
+                lastCamCode = code; lastCamTs = now;
+                status.textContent = `Detected: ${code}`;
+                processScan(code);
+              }
+            }
+          } catch {}
+        }, 300);
+      } catch (err) { status.textContent = "Camera error: " + err.message; }
+    }
+    function closeCameraModal() {
+      document.getElementById("cam-modal").classList.remove("open");
+      if (camTimer) { clearInterval(camTimer); camTimer = null; }
+      if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
+    }
+
+    function escapeHtml(s) {
+      return String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+
+    window.addEventListener("DOMContentLoaded", initApp);
+  </script>
+</body>
+</html>

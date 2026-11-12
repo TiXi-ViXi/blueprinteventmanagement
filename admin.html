@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="cyan" data-fx="full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="The Blueprint Event Management — Executive Command & Admin Web App. Live treasury fund monitoring, internal encrypted team chat, and confidential information vault.">
+  <meta name="theme-color" content="#00f0ff">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Blueprint HQ">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+  <title>THE BLUEPRINT // EXECUTIVE COMMAND WEB APP</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Space Grotesk, Orbitron, Inter, JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Orbitron:wght@600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <!-- Font Awesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- Custom Architectural Styles -->
+  <link rel="stylesheet" href="css/blueprint.css">
+</head>
+<body class="relative antialiased selection:bg-cyan-400 selection:text-slate-950 min-h-screen flex flex-col bg-[#030712] text-white">
+
+  <!-- Interactive HiDPI CAD Background Canvas -->
+  <canvas id="cadBgCanvas" class="fixed inset-0 pointer-events-none z-0 opacity-40"></canvas>
+
+  <!-- ==================== WEB APP TOP COMMAND HEADER ==================== -->
+  <header class="sticky top-0 z-40 backdrop-blur-xl bg-black/85 border-b border-current/20 shrink-0">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <a href="index.html" class="flex items-center gap-2.5 group" title="Return to Main Website">
+          <div class="w-9 h-9 rounded-xl bg-cyan-500/15 border border-cyan-400/40 flex items-center justify-center text-cyan-400 group-hover:scale-105 transition-transform">
+            <svg viewBox="0 0 120 120" class="w-6 h-6 bp-svg-glow">
+              <polygon points="60,8 112,60 60,112 8,60" fill="none" stroke="currentColor" stroke-width="3" />
+              <path d="M28,80 L28,42 L60,72 L92,42 L92,80" fill="none" stroke="currentColor" stroke-width="6" />
+            </svg>
+          </div>
+          <div>
+            <div class="font-tech font-extrabold text-sm sm:text-base tracking-wider bp-accent-text bp-text-glow leading-none">THE BLUEPRINT</div>
+            <div class="font-mono-cad text-[9px] bp-muted-text mt-0.5 tracking-widest">COMMAND WEB APP // KHULNA HQ</div>
+          </div>
+        </a>
+
+        <span class="hidden md:inline-block px-2.5 py-0.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 text-emerald-400 font-mono-cad text-[10px] font-bold">
+          ● PWA ENGINE READY
+        </span>
+      </div>
+
+      <!-- Action Toolbar -->
+      <div class="flex items-center gap-2 font-mono-cad text-xs">
+        <!-- BSAA Event Scanner Button -->
+        <a href="bsaaevent.html" target="_blank" class="px-3 py-1.5 rounded-lg border border-cyan-400/50 bg-cyan-500/15 text-cyan-300 font-bold hover:bg-cyan-500/25 flex items-center gap-1.5 transition-all" title="Launch BSAA Family Night Gate Scanner (/bsaaevent)">
+          <i class="fa-solid fa-qrcode text-xs"></i>
+          <span>/bsaaevent SCANNER</span>
+        </a>
+
+        <!-- PWA Install Button -->
+        <button id="pwaInstallAppBtn" type="button" class="hidden px-3 py-1.5 rounded-lg border border-cyan-400/50 bg-cyan-500/15 text-cyan-300 font-bold hover:bg-cyan-500/25 flex items-center gap-1.5 transition-all">
+          <i class="fa-solid fa-download text-xs"></i>
+          <span>INSTALL APP</span>
+        </button>
+
+        <!-- Live Clock -->
+        <div class="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-current/20 bg-black/40 text-[11px] bp-accent-text">
+          <i class="fa-regular fa-clock"></i>
+          <span id="liveClock">BST: --:--:--</span>
+        </div>
+
+        <!-- Quick Theme Toggle -->
+        <div class="flex items-center gap-1 p-1 rounded-lg border border-current/20 bg-black/40">
+          <button type="button" data-set-theme="cyan" title="Blueprint Cyan" class="w-5 h-5 rounded-full bg-[#00f0ff] ring-1 ring-white/50"></button>
+          <button type="button" data-set-theme="gold" title="Imperial Gold" class="w-5 h-5 rounded-full bg-[#f59e0b]"></button>
+          <button type="button" data-set-theme="crimson" title="Arena Crimson" class="w-5 h-5 rounded-full bg-[#fb7185]"></button>
+        </div>
+
+        <a href="index.html" class="px-3 py-1.5 rounded-lg border border-current/25 hover:border-current hover:bg-white/10 bp-soft-text text-[11px] font-bold flex items-center gap-1.5">
+          <i class="fa-solid fa-arrow-left text-xs"></i>
+          <span class="hidden sm:inline">PUBLIC SITE</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==================== MAIN FULLSCREEN APP CONTENT ==================== -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 relative z-10">
+    <div id="adminPortalBody" class="w-full">
+      <!-- Injected by js/09-admin-portal.js -->
+    </div>
+  </main>
+
+  <!-- ==================== FLOATING TOASTS ==================== -->
+  <div id="bpToastStack" class="fixed bottom-6 left-4 right-4 sm:right-auto sm:left-6 z-[70] space-y-2 pointer-events-auto"></div>
+
+  <!-- Modular Scripts -->
+  <script defer src="js/00-registry.js"></script>
+  <script defer src="js/01-hud-shell.js"></script>
+  <script defer src="js/02-visual-fx.js"></script>
+  <script defer src="js/09-admin-portal.js?v=6.1"></script>
+
+  <!-- Dedicated Web App Service Worker Registration & PWA Controller -->
+  <script>
+    (function () {
+      'use strict';
+      // Register Service Worker
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+          navigator.serviceWorker.register('./sw.js')
+            .then(function (reg) {
+              console.log('[PWA] Service Worker registered with scope:', reg.scope);
+            })
+            .catch(function (err) {
+              console.warn('[PWA] Service Worker registration failed:', err);
+            });
+        });
+      }
+
+      // Handle beforeinstallprompt
+      var deferredPrompt = null;
+      var installBtn = document.getElementById('pwaInstallAppBtn');
+      window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault();
+        deferredPrompt = e;
+        if (installBtn) {
+          installBtn.classList.remove('hidden');
+          installBtn.addEventListener('click', function () {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then(function (choice) {
+              if (choice.outcome === 'accepted') {
+                if (window.BlueprintApp && window.BlueprintApp.toast) {
+                  window.BlueprintApp.toast('The Blueprint Web App successfully installed!', 'success', 'PWA INSTALLED');
+                }
+              }
+              deferredPrompt = null;
+              installBtn.classList.add('hidden');
+            });
+          });
+        }
+      });
+
+      // Auto-render dashboard on standalone load with fallback poll
+      function ensureDashboardRendered() {
+        var container = document.getElementById('adminPortalBody');
+        if (container && !container.children.length) {
+          if (window.BlueprintApp && window.BlueprintApp.admin && typeof window.BlueprintApp.admin.renderPortal === 'function') {
+            window.BlueprintApp.admin.renderPortal();
+          } else {
+            setTimeout(ensureDashboardRendered, 50);
+          }
+        }
+      }
+
+      if (document.readyState === 'loading') {
+        window.addEventListener('DOMContentLoaded', ensureDashboardRendered);
+      } else {
+        ensureDashboardRendered();
+      }
+
+      // If launched from query params e.g. ?open=chat or ?open=funds
+      window.addEventListener('load', function () {
+        var params = new URLSearchParams(window.location.search);
+        var openTab = params.get('open');
+        if (openTab) {
+          setTimeout(function () {
+            var tabBtn = document.querySelector('[data-admin-tab="' + openTab + '"]');
+            if (tabBtn) tabBtn.click();
+          }, 350);
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
