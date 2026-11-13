@@ -35,8 +35,24 @@ import hashlib
 import secrets
 import threading
 import mimetypes
+import csv
+from io import BytesIO, StringIO
 from datetime import datetime
 from http.server import HTTPServer, SimpleHTTPRequestHandler
+
+try:
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment
+    HAS_OPENPYXL = True
+except ImportError:
+    HAS_OPENPYXL = False
+
+try:
+    import qrcode
+    import qrcode.image.svg
+    HAS_QRCODE = True
+except ImportError:
+    HAS_QRCODE = False
 try:
     from http.server import ThreadingHTTPServer
     ServerClass = ThreadingHTTPServer
@@ -51,7 +67,7 @@ DB_PATH = os.path.join(DATA_DIR, "blueprint.db")
 HASH_SALT = "bp_khulna_salt_v5_"
 DEFAULT_SUPER_ADMIN_HASH = "b6283f70f00c7438303f92d6b986e617b21bba2449c914f730100421cbf925c5"
 
-db_lock = threading.Lock()
+db_lock = threading.RLock()
 
 def hash_password(plain_text):
     if not plain_text:
@@ -130,6 +146,17 @@ def init_db():
                 ip TEXT
             )
         """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS bsaa_scan_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                serial TEXT NOT NULL,
+                action TEXT NOT NULL CHECK(action IN ('ENTRY', 'EXIT')),
+                timestamp TEXT NOT NULL,
+                gate TEXT NOT NULL,
+                manual INTEGER NOT NULL DEFAULT 0,
+                created_epoch REAL NOT NULL
+            )
+        """)
         conn.commit()
 
         # Seed default superadmin if missing
@@ -155,6 +182,159 @@ def init_db():
 
 # Initialize DB on module load
 init_db()
+
+# -------------------------------------------------------------
+# BSAA FAMILY NIGHT GATE SCANNER STATE ENGINE
+# -------------------------------------------------------------
+BSAA_ATTENDEES_PATH = os.path.join(BASE_DIR, "01_Gate_Scanner_Software", "attendees.json")
+if not os.path.exists(BSAA_ATTENDEES_PATH):
+    BSAA_ATTENDEES_PATH = os.path.join(BASE_DIR, "data", "attendees.json")
+if not os.path.exists(BSAA_ATTENDEES_PATH):
+    BSAA_ATTENDEES_PATH = os.path.join(BASE_DIR, "attendees.json")
+
+BSAA_ATTENDEES = []
+BSAA_BY_SERIAL = {}
+BSAA_BY_COMPACT = {}
+
+if os.path.exists(BSAA_ATTENDEES_PATH):
+    try:
+        with open(BSAA_ATTENDEES_PATH, "r", encoding="utf-8") as f:
+            BSAA_ATTENDEES = json.load(f)
+        BSAA_BY_SERIAL = {a["serial"].upper(): a for a in BSAA_ATTENDEES}
+        BSAA_BY_COMPACT = {a["serial_compact"]: a for a in BSAA_ATTENDEES}
+    except Exception as e:
+        print(f"Warning: Failed to load BSAA attendees from {BSAA_ATTENDEES_PATH}: {e}")
+
+BSAA_STATE_VERSION = 1
+with db_lock:
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("SELECT MAX(id) FROM bsaa_scan_logs")
+        row = cur.fetchone()
+        if row and row[0]:
+            BSAA_STATE_VERSION = int(row[0]) + 1
+        conn.close()
+    except Exception:
+        pass
+
+def resolve_bsaa_attendee(raw_code: str):
+    if not raw_code:
+        return None
+    clean = re.sub(r"\s+", " ", str(raw_code).strip().strip("*")).upper()
+    if clean in BSAA_BY_SERIAL:
+        return BSAA_BY_SERIAL[clean]
+    compact = re.sub(r"[^A-Z0-9]", "", clean)
+    if compact in BSAA_BY_COMPACT:
+        return BSAA_BY_COMPACT[compact]
+    m = re.match(r"^(?:BSAA|BSSA)?0*(\d+)([A-Z])$", compact)
+    if m:
+        norm = f"BSAA{int(m.group(1)):03d}{m.group(2)}"
+        if norm in BSAA_BY_COMPACT:
+            return BSAA_BY_COMPACT[norm]
+    return None
+
+def compute_bsaa_state():
+    """Returns (status_map, logs_newest_first)."""
+    status_map = {
+        a["serial"]: {"status": "outside", "last_entry": None, "last_exit": None, "scan_count": 0}
+        for a in BSAA_ATTENDEES
+    }
+    with db_lock:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("SELECT id, serial, action, timestamp, gate, manual, created_epoch FROM bsaa_scan_logs ORDER BY id ASC")
+        rows = [dict(r) for r in cur.fetchall()]
+        conn.close()
+
+    logs = []
+    for r in rows:
+        ser = r["serial"]
+        st = status_map.get(ser)
+        if st:
+            st["scan_count"] += 1
+            if r["action"] == "ENTRY":
+                st["status"] = "inside"
+                st["last_entry"] = r["timestamp"]
+            else:
+                st["status"] = "exited"
+                st["last_exit"] = r["timestamp"]
+        logs.append({
+            "id": r["id"],
+            "serial": ser,
+            "action": r["action"],
+            "timestamp": r["timestamp"],
+            "gate": r["gate"],
+            "manual": bool(r["manual"]),
+            "created_epoch": r["created_epoch"],
+        })
+    logs.reverse()
+    return status_map, logs
+
+def generate_bsaa_csv():
+    status_map, _ = compute_bsaa_state()
+    buf = StringIO()
+    buf.write("\ufeff")  # UTF-8 BOM
+    writer = csv.writer(buf)
+    writer.writerow(["SL No", "Serial", "Name", "Category", "Designation/Relation", "Company", "Phone", "Current Status", "Last Entry", "Last Exit", "Total Scans"])
+    for a in BSAA_ATTENDEES:
+        st = status_map.get(a["serial"], {"status": "outside", "last_entry": None, "last_exit": None, "scan_count": 0})
+        writer.writerow([
+            a["sl"], a["serial"], a["name"], a["role"], a["designation"], a["company"], a["phone"],
+            st["status"].upper(), st["last_entry"] or "", st["last_exit"] or "", st["scan_count"]
+        ])
+    return buf.getvalue().encode("utf-8")
+
+def generate_bsaa_xlsx():
+    if not HAS_OPENPYXL:
+        return generate_bsaa_csv()
+
+    status_map, logs = compute_bsaa_state()
+    wb = openpyxl.Workbook()
+    header_fill = PatternFill(start_color="0B1B3D", end_color="0B1B3D", fill_type="solid")
+    header_font = Font(bold=True, color="FFFFFF")
+
+    # Sheet 1: Summary
+    ws1 = wb.active
+    ws1.title = "Attendance Summary"
+    cols1 = ["SL No", "Serial", "Name", "Category", "Designation / Relation", "Company", "Phone", "Current Status", "Last Entry", "Last Exit", "Total Scans"]
+    ws1.append(cols1)
+    for cell in ws1[1]:
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal="center")
+
+    for a in BSAA_ATTENDEES:
+        st = status_map.get(a["serial"], {"status": "outside", "last_entry": None, "last_exit": None, "scan_count": 0})
+        ws1.append([
+            a["sl"], a["serial"], a["name"], a["role"], a["designation"], a["company"], a["phone"],
+            st["status"].upper(), st["last_entry"] or "", st["last_exit"] or "", st["scan_count"]
+        ])
+
+    # Sheet 2: Scan Audit Log
+    ws2 = wb.create_sheet("Entry & Exit Scan Log")
+    cols2 = ["Log ID", "Timestamp", "Serial", "Name", "Category", "Company", "Action", "Gate", "Method"]
+    ws2.append(cols2)
+    for cell in ws2[1]:
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal="center")
+
+    for l in reversed(logs):
+        p = BSAA_BY_SERIAL.get(l["serial"].upper(), {})
+        ws2.append([
+            l["id"], l["timestamp"], l["serial"], p.get("name", ""), p.get("role", ""),
+            p.get("company", ""), l["action"], l["gate"], "Manual" if l["manual"] else "Scanner"
+        ])
+
+    for ws in (ws1, ws2):
+        for col in ws.columns:
+            max_len = max(len(str(c.value or "")) for c in col)
+            ws.column_dimensions[col[0].column_letter].width = min(max_len + 4, 42)
+
+    out = BytesIO()
+    wb.save(out)
+    return out.getvalue()
 
 def db_get_users():
     with db_lock:
@@ -519,6 +699,15 @@ class BlueprintHandler(SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def send_binary(self, data: bytes, content_type: str, filename: str = None):
+        self.send_response(200)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", str(len(data)))
+        if filename:
+            self.send_header("Content-Disposition", f'attachment; filename="{filename}"')
+        self.end_headers()
+        self.wfile.write(data)
+
     def read_json_body(self):
         try:
             content_length = int(self.headers.get("Content-Length", 0))
@@ -530,7 +719,18 @@ class BlueprintHandler(SimpleHTTPRequestHandler):
             return None
 
     def do_GET(self):
+        # 1. Static files in 01_Gate_Scanner_Software/static
+        if self.path.startswith("/static/"):
+            rel_path = self.path[len("/static/"):].split("?")[0]
+            static_file = os.path.join(BASE_DIR, "01_Gate_Scanner_Software", "static", rel_path)
+            if os.path.isfile(static_file):
+                mime, _ = mimetypes.guess_type(static_file)
+                with open(static_file, "rb") as f:
+                    data = f.read()
+                return self.send_binary(data, mime or "application/octet-stream")
+
         req_path = self.path.split("?")[0].strip("/")
+        query_str = self.path.split("?")[1] if "?" in self.path else ""
 
         # API Routes
         if req_path == "api/health":
@@ -549,6 +749,66 @@ class BlueprintHandler(SimpleHTTPRequestHandler):
             data = db_get_sync_data()
             return self.send_json({"success": True, "data": data})
 
+        # BSAA Live Sync State Endpoint
+        if req_path == "api/state":
+            since_v = -1
+            m = re.search(r"since_version=(-?\d+)", query_str)
+            if m:
+                try:
+                    since_v = int(m.group(1))
+                except Exception:
+                    since_v = -1
+
+            if since_v == BSAA_STATE_VERSION:
+                return self.send_json({"unchanged": True, "version": BSAA_STATE_VERSION})
+
+            status_map, logs = compute_bsaa_state()
+            return self.send_json({
+                "unchanged": False,
+                "version": BSAA_STATE_VERSION,
+                "attendees": BSAA_ATTENDEES if since_v < 0 else None,
+                "status_map": status_map,
+                "logs": logs[:300]
+            })
+
+        # BSAA Gate Server Info & Connection QR
+        if req_path == "api/info":
+            host = self.headers.get("Host", "blueprinteventmanagement.shop")
+            proto = "https" if not (host.startswith("localhost") or host.startswith("127.0.0.1")) else "http"
+            primary_url = f"{proto}://{host}/bsaaevent"
+            qr_svg = ""
+            if HAS_QRCODE:
+                try:
+                    factory = qrcode.image.svg.SvgPathImage
+                    img = qrcode.make(primary_url, image_factory=factory)
+                    buf = BytesIO()
+                    img.save(buf)
+                    qr_svg = buf.getvalue().decode("utf-8")
+                except Exception:
+                    pass
+            return self.send_json({
+                "primary_url": primary_url,
+                "urls": [primary_url],
+                "qr_svg": qr_svg,
+                "total_attendees": len(BSAA_ATTENDEES),
+            })
+
+        # BSAA Reports Export Endpoints
+        if req_path == "api/export/csv":
+            csv_bytes = generate_bsaa_csv()
+            filename = f"BSAA_Attendance_{datetime.now().strftime('%Y-%m-%d_%H-%M')}.csv"
+            return self.send_binary(csv_bytes, "text/csv; charset=utf-8", filename)
+
+        if req_path == "api/export/xlsx":
+            if HAS_OPENPYXL:
+                xlsx_bytes = generate_bsaa_xlsx()
+                filename = f"BSAA_Attendance_Report_{datetime.now().strftime('%Y-%m-%d_%H-%M')}.xlsx"
+                return self.send_binary(xlsx_bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", filename)
+            else:
+                csv_bytes = generate_bsaa_csv()
+                filename = f"BSAA_Attendance_{datetime.now().strftime('%Y-%m-%d_%H-%M')}.csv"
+                return self.send_binary(csv_bytes, "text/csv; charset=utf-8", filename)
+
         # Clean URL Routing for Frontend
         if req_path == "" or req_path == "app":
             self.path = "/index.html"
@@ -566,6 +826,7 @@ class BlueprintHandler(SimpleHTTPRequestHandler):
         return super().do_GET()
 
     def do_POST(self):
+        global BSAA_STATE_VERSION
         req_path = self.path.split("?")[0].strip("/")
         body = self.read_json_body()
 
@@ -625,9 +886,127 @@ class BlueprintHandler(SimpleHTTPRequestHandler):
             merged = db_save_sync_data(body)
             return self.send_json({"success": True, "data": merged, "message": "Database synchronized successfully"})
 
+        # 6. BSAA Event Gate Scan Endpoint
+        if req_path == "api/scan":
+            raw_code = body.get("raw_code") or ""
+            mode = body.get("mode") or "auto"
+            try:
+                cooldown_sec = float(body.get("cooldown_sec", 5.0))
+            except Exception:
+                cooldown_sec = 5.0
+            gate_name = str(body.get("gate_name") or "Gate").strip()
+            manual = bool(body.get("manual", False))
+
+            person = resolve_bsaa_attendee(raw_code)
+            if not person:
+                return self.send_json({
+                    "ok": False,
+                    "outcome": "INVALID",
+                    "raw_code": raw_code,
+                    "message": "Barcode not found in BSAA database",
+                    "version": BSAA_STATE_VERSION,
+                })
+
+            with db_lock:
+                status_map, logs = compute_bsaa_state()
+                st = status_map.get(person["serial"], {"status": "outside", "last_entry": None, "last_exit": None, "scan_count": 0})
+                now_epoch = time.time()
+
+                # Anti-double-scan cooldown check
+                if cooldown_sec > 0 and mode not in ("entry_force", "exit_force"):
+                    for l in logs:
+                        if l["serial"] == person["serial"]:
+                            diff = now_epoch - l["created_epoch"]
+                            if diff < cooldown_sec:
+                                return self.send_json({
+                                    "ok": False,
+                                    "outcome": "COOLDOWN",
+                                    "attendee": person,
+                                    "attendee_state": st,
+                                    "message": f"Double-scan blocked ({diff:.1f}s ago)",
+                                    "status_map": status_map,
+                                    "logs": logs[:300],
+                                    "version": BSAA_STATE_VERSION,
+                                })
+                            break
+
+                if mode == "auto":
+                    action = "EXIT" if st["status"] == "inside" else "ENTRY"
+                elif mode == "entry":
+                    if st["status"] == "inside":
+                        last_t = st["last_entry"].split(" ")[1] if st["last_entry"] else "earlier"
+                        return self.send_json({
+                            "ok": False,
+                            "outcome": "ALREADY_INSIDE",
+                            "attendee": person,
+                            "attendee_state": st,
+                            "message": f"Already INSIDE since {last_t}",
+                            "status_map": status_map,
+                            "logs": logs[:300],
+                            "version": BSAA_STATE_VERSION,
+                        })
+                    action = "ENTRY"
+                elif mode == "exit":
+                    if st["status"] != "inside":
+                        return self.send_json({
+                            "ok": False,
+                            "outcome": "NOT_INSIDE",
+                            "attendee": person,
+                            "attendee_state": st,
+                            "message": "Not marked INSIDE yet",
+                            "status_map": status_map,
+                            "logs": logs[:300],
+                            "version": BSAA_STATE_VERSION,
+                        })
+                    action = "EXIT"
+                elif mode == "entry_force":
+                    action = "ENTRY"
+                elif mode == "exit_force":
+                    action = "EXIT"
+                else:
+                    action = "EXIT" if st["status"] == "inside" else "ENTRY"
+
+                ts_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                conn = get_db()
+                cur = conn.cursor()
+                cur.execute(
+                    "INSERT INTO bsaa_scan_logs (serial, action, timestamp, gate, manual, created_epoch) VALUES (?, ?, ?, ?, ?, ?)",
+                    (person["serial"], action, ts_str, gate_name or "Gate", 1 if manual else 0, now_epoch)
+                )
+                log_id = cur.lastrowid
+                conn.commit()
+                conn.close()
+
+                BSAA_STATE_VERSION += 1
+                new_status_map, new_logs = compute_bsaa_state()
+
+                return self.send_json({
+                    "ok": True,
+                    "outcome": action,
+                    "log_id": log_id,
+                    "attendee": person,
+                    "attendee_state": new_status_map[person["serial"]],
+                    "message": "ENTRY GRANTED" if action == "ENTRY" else "EXIT RECORDED",
+                    "status_map": new_status_map,
+                    "logs": new_logs[:300],
+                    "version": BSAA_STATE_VERSION,
+                })
+
+        # 7. BSAA Reset Logs Endpoint
+        if req_path == "api/reset":
+            with db_lock:
+                conn = get_db()
+                cur = conn.cursor()
+                cur.execute("DELETE FROM bsaa_scan_logs")
+                conn.commit()
+                conn.close()
+                BSAA_STATE_VERSION += 1
+            return self.send_json({"ok": True, "version": BSAA_STATE_VERSION})
+
         return self.send_json({"success": False, "error": "Not Found"}, 404)
 
     def do_DELETE(self):
+        global BSAA_STATE_VERSION
         req_path = self.path.split("?")[0].strip("/")
 
         # Delete user: /api/users/<id>
@@ -638,6 +1017,19 @@ class BlueprintHandler(SimpleHTTPRequestHandler):
             if not ok:
                 return self.send_json({"success": False, "error": err or "User not found"}, 400)
             return self.send_json({"success": True, "message": f"User @{user_id} deleted from database"})
+
+        # Delete BSAA scan log: /api/logs/<id>
+        m_bsaa_del = re.match(r"^api/logs/(\d+)$", req_path)
+        if m_bsaa_del:
+            log_id = int(m_bsaa_del.group(1))
+            with db_lock:
+                conn = get_db()
+                cur = conn.cursor()
+                cur.execute("DELETE FROM bsaa_scan_logs WHERE id = ?", (log_id,))
+                conn.commit()
+                conn.close()
+                BSAA_STATE_VERSION += 1
+            return self.send_json({"ok": True, "version": BSAA_STATE_VERSION})
 
         return self.send_json({"success": False, "error": "Not Found"}, 404)
 

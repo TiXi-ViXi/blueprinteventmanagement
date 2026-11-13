@@ -1496,9 +1496,12 @@
     }
 
     function getPhotoSrc(person) {
-      if (!person || !person.photo) return null;
-      if (APP_MODE === "server") return `/static/photos/${person.photo}`;
-      return EMBEDDED_PHOTOS[person.serial] || null;
+      if (!person) return null;
+      if (typeof EMBEDDED_PHOTOS !== "undefined" && EMBEDDED_PHOTOS[person.serial]) {
+        return EMBEDDED_PHOTOS[person.serial];
+      }
+      if (person.photo) return `/static/photos/${person.photo}`;
+      return null;
     }
 
     function handleScanResultUI(res) {

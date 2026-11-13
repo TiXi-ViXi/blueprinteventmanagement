@@ -26,3 +26,6 @@ get-portable-git.ps1
 # Archives
 *.rar
 blueprint-event-management.zip
+
+# Scratch testing scripts
+scratch/

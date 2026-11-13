@@ -1287,7 +1287,7 @@
   </div>
 
   <script>
-    const APP_MODE = "standalone"; // "server" or "standalone"
+    const APP_MODE = "server"; // "server" or "standalone"
     const EMBEDDED_ATTENDEES = [
   {
     "sl": 1,
@@ -6267,8 +6267,17 @@
       else gateInput.value = "Main Gate PC";
       gateInput.addEventListener("change", () => localStorage.setItem("bsaa_gate_name", gateInput.value.trim() || "Gate"));
 
+      // Pre-load embedded attendees immediately for instant UI, directory & search
+      if (typeof EMBEDDED_ATTENDEES !== "undefined" && EMBEDDED_ATTENDEES.length > 0) {
+        loadAttendeesList(EMBEDDED_ATTENDEES);
+      }
+
       if (APP_MODE === "server") {
-        document.getElementById("mode-pill").textContent = "● LIVE SYNC";
+        const pill = document.getElementById("mode-pill");
+        if (pill) {
+          pill.textContent = "● LIVE SYNC";
+          pill.classList.remove("offline");
+        }
         document.getElementById("btn-connect-mobile").style.display = "inline-flex";
         document.getElementById("btn-export-xlsx").style.display = "inline-flex";
         await fetchServerState(true);
@@ -6277,7 +6286,6 @@
         const pill = document.getElementById("mode-pill");
         pill.textContent = "● OFFLINE STANDALONE";
         pill.classList.add("offline");
-        loadAttendeesList(EMBEDDED_ATTENDEES);
         loadLocalLogs();
         recomputeStandaloneState();
         renderAll();
@@ -6304,7 +6312,11 @@
         const res = await fetch(`/api/state?since_version=${force ? -1 : stateVersion}`);
         if (!res.ok) return;
         const data = await res.json();
-        document.getElementById("mode-pill").textContent = "● LIVE SYNC";
+        const pill = document.getElementById("mode-pill");
+        if (pill) {
+          pill.textContent = "● LIVE SYNC";
+          pill.classList.remove("offline");
+        }
         if (data.unchanged) return;
         if (data.attendees && data.attendees.length) loadAttendeesList(data.attendees);
         statusMap = data.status_map || {};
@@ -6313,7 +6325,11 @@
         renderAll();
         if (lastShownSerial && attendeeBySerial[lastShownSerial]) renderFamilyBox(attendeeBySerial[lastShownSerial]);
       } catch (e) {
-        document.getElementById("mode-pill").textContent = "○ RECONNECTING...";
+        const pill = document.getElementById("mode-pill");
+        if (pill) {
+          pill.textContent = "○ RECONNECTING...";
+          pill.classList.add("offline");
+        }
       }
     }
 
@@ -6427,9 +6443,12 @@
     }
 
     function getPhotoSrc(person) {
-      if (!person || !person.photo) return null;
-      if (APP_MODE === "server") return `/static/photos/${person.photo}`;
-      return EMBEDDED_PHOTOS[person.serial] || null;
+      if (!person) return null;
+      if (typeof EMBEDDED_PHOTOS !== "undefined" && EMBEDDED_PHOTOS[person.serial]) {
+        return EMBEDDED_PHOTOS[person.serial];
+      }
+      if (person.photo) return `/static/photos/${person.photo}`;
+      return null;
     }
 
     function handleScanResultUI(res) {
