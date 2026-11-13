@@ -1035,12 +1035,13 @@ class BlueprintHandler(SimpleHTTPRequestHandler):
 
 
 def run():
-    server_address = ("", PORT)
+    host = os.environ.get("HOST", "127.0.0.1")
+    server_address = (host, PORT)
     httpd = ServerClass(server_address, BlueprintHandler)
     print(f"================================================================")
     print(f"  THE BLUEPRINT EVENT MANAGEMENT // PRODUCTION SERVER & DB")
     print(f"  SQLite Database: {DB_PATH}")
-    print(f"  Listening on:  http://0.0.0.0:{PORT}/")
+    print(f"  Listening on:  http://{host}:{PORT}/")
     print(f"  Login Gateway: http://0.0.0.0:{PORT}/login")
     print(f"  Executive HQ:  http://0.0.0.0:{PORT}/admin")
     print(f"  Gate Scanner:  http://0.0.0.0:{PORT}/bsaaevent")
