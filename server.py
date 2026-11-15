@@ -157,6 +157,19 @@ def init_db():
                 created_epoch REAL NOT NULL
             )
         """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS bsaa_gift_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                serial TEXT NOT NULL,
+                action TEXT NOT NULL CHECK(action IN ('DELIVERED', 'REVOKED')),
+                timestamp TEXT NOT NULL,
+                desk TEXT NOT NULL,
+                staff_user TEXT NOT NULL DEFAULT '',
+                manual INTEGER NOT NULL DEFAULT 0,
+                notes TEXT DEFAULT '',
+                created_epoch REAL NOT NULL
+            )
+        """)
         conn.commit()
 
         # Seed default superadmin if missing
@@ -206,6 +219,7 @@ if os.path.exists(BSAA_ATTENDEES_PATH):
         print(f"Warning: Failed to load BSAA attendees from {BSAA_ATTENDEES_PATH}: {e}")
 
 BSAA_STATE_VERSION = 1
+BSAA_GIFT_STATE_VERSION = 1
 with db_lock:
     try:
         conn = get_db()
@@ -214,6 +228,10 @@ with db_lock:
         row = cur.fetchone()
         if row and row[0]:
             BSAA_STATE_VERSION = int(row[0]) + 1
+        cur.execute("SELECT MAX(id) FROM bsaa_gift_logs")
+        row_gift = cur.fetchone()
+        if row_gift and row_gift[0]:
+            BSAA_GIFT_STATE_VERSION = int(row_gift[0]) + 1
         conn.close()
     except Exception:
         pass
@@ -325,6 +343,156 @@ def generate_bsaa_xlsx():
         ws2.append([
             l["id"], l["timestamp"], l["serial"], p.get("name", ""), p.get("role", ""),
             p.get("company", ""), l["action"], l["gate"], "Manual" if l["manual"] else "Scanner"
+        ])
+
+    for ws in (ws1, ws2):
+        for col in ws.columns:
+            max_len = max(len(str(c.value or "")) for c in col)
+            ws.column_dimensions[col[0].column_letter].width = min(max_len + 4, 42)
+
+    out = BytesIO()
+    wb.save(out)
+    return out.getvalue()
+
+# -------------------------------------------------------------
+# BSAA GIFT DISTRIBUTION TERMINAL STATE ENGINE
+# -------------------------------------------------------------
+def get_family_main_participant(family_id):
+    if not family_id:
+        return None
+    for a in BSAA_ATTENDEES:
+        if a.get("family_id") == family_id and a.get("role") == "Participant":
+            return a
+    return None
+
+def compute_bsaa_gift_state():
+    """Returns (gift_status_map, logs_newest_first, metrics)."""
+    gift_status_map = {}
+    for a in BSAA_ATTENDEES:
+        is_main = (a.get("role") == "Participant")
+        gift_status_map[a["serial"]] = {
+            "status": "UNCLAIMED" if is_main else "INELIGIBLE",
+            "delivered_at": None,
+            "desk": None,
+            "staff": None,
+            "is_eligible": is_main,
+            "log_id": None
+        }
+
+    with db_lock:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("SELECT id, serial, action, timestamp, desk, staff_user, manual, notes, created_epoch FROM bsaa_gift_logs ORDER BY id ASC")
+        rows = [dict(r) for r in cur.fetchall()]
+        conn.close()
+
+    logs = []
+    for r in rows:
+        ser = r["serial"]
+        st = gift_status_map.get(ser)
+        if r["action"] == "DELIVERED":
+            if st:
+                st["status"] = "DELIVERED"
+                st["delivered_at"] = r["timestamp"]
+                st["desk"] = r["desk"]
+                st["staff"] = r["staff_user"]
+                st["log_id"] = r["id"]
+        elif r["action"] == "REVOKED":
+            if st and st["is_eligible"]:
+                st["status"] = "UNCLAIMED"
+                st["delivered_at"] = None
+                st["desk"] = None
+                st["staff"] = None
+                st["log_id"] = None
+
+        p = BSAA_BY_SERIAL.get(ser.upper(), {})
+        logs.append({
+            "id": r["id"],
+            "serial": ser,
+            "name": p.get("name", "Unknown"),
+            "role": p.get("role", "Participant"),
+            "company": p.get("company", ""),
+            "action": r["action"],
+            "timestamp": r["timestamp"],
+            "desk": r["desk"],
+            "staff_user": r["staff_user"],
+            "manual": bool(r["manual"]),
+            "notes": r.get("notes", ""),
+            "created_epoch": r["created_epoch"]
+        })
+    logs.reverse()
+
+    total_eligible = sum(1 for a in BSAA_ATTENDEES if a.get("role") == "Participant")
+    total_delivered = sum(1 for a in BSAA_ATTENDEES if a.get("role") == "Participant" and gift_status_map[a["serial"]]["status"] == "DELIVERED")
+    total_unclaimed = total_eligible - total_delivered
+    pct = round((total_delivered / total_eligible) * 100, 1) if total_eligible > 0 else 0
+
+    metrics = {
+        "total_eligible": total_eligible,
+        "total_delivered": total_delivered,
+        "total_unclaimed": total_unclaimed,
+        "percent_delivered": pct,
+        "total_logs": len(rows)
+    }
+    return gift_status_map, logs, metrics
+
+def generate_bsaa_gift_csv():
+    gift_status_map, logs, _ = compute_bsaa_gift_state()
+    buf = StringIO()
+    buf.write("\ufeff")
+    writer = csv.writer(buf)
+    writer.writerow(["SL No", "Serial", "Main Participant Name", "Category", "Company", "Designation", "Phone", "Gift Status", "Delivered At", "Desk", "Delivered By"])
+    for a in BSAA_ATTENDEES:
+        if a.get("role") != "Participant":
+            continue
+        st = gift_status_map.get(a["serial"], {"status": "UNCLAIMED"})
+        writer.writerow([
+            a["sl"], a["serial"], a["name"], a["role"], a["company"], a["designation"], a["phone"],
+            st.get("status", "UNCLAIMED"), st.get("delivered_at") or "", st.get("desk") or "", st.get("staff") or ""
+        ])
+    return buf.getvalue().encode("utf-8")
+
+def generate_bsaa_gift_xlsx():
+    if not HAS_OPENPYXL:
+        return generate_bsaa_gift_csv()
+
+    gift_status_map, logs, metrics = compute_bsaa_gift_state()
+    wb = openpyxl.Workbook()
+    header_fill = PatternFill(start_color="0B1B3D", end_color="0B1B3D", fill_type="solid")
+    header_font = Font(bold=True, color="FFFFFF")
+
+    # Sheet 1: Main Participants Gift Status
+    ws1 = wb.active
+    ws1.title = "Gift Distribution Summary"
+    cols1 = ["SL No", "Serial", "Main Participant Name", "Category", "Company", "Designation", "Phone", "Gift Status", "Delivered At", "Desk", "Staff"]
+    ws1.append(cols1)
+    for cell in ws1[1]:
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal="center")
+
+    for a in BSAA_ATTENDEES:
+        if a.get("role") != "Participant":
+            continue
+        st = gift_status_map.get(a["serial"], {"status": "UNCLAIMED"})
+        ws1.append([
+            a["sl"], a["serial"], a["name"], a["role"], a["company"], a["designation"], a["phone"],
+            st.get("status", "UNCLAIMED"), st.get("delivered_at") or "", st.get("desk") or "", st.get("staff") or ""
+        ])
+
+    # Sheet 2: Audit Logs
+    ws2 = wb.create_sheet("Gift Handover Audit Log")
+    cols2 = ["Log ID", "Timestamp", "Serial", "Attendee Name", "Role", "Company", "Action", "Desk", "Staff", "Method"]
+    ws2.append(cols2)
+    for cell in ws2[1]:
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal="center")
+
+    for l in reversed(logs):
+        ws2.append([
+            l["id"], l["timestamp"], l["serial"], l["name"], l["role"],
+            l["company"], l["action"], l["desk"], l["staff_user"], "Manual" if l["manual"] else "Scanner"
         ])
 
     for ws in (ws1, ws2):
@@ -809,6 +977,68 @@ class BlueprintHandler(SimpleHTTPRequestHandler):
                 filename = f"BSAA_Attendance_{datetime.now().strftime('%Y-%m-%d_%H-%M')}.csv"
                 return self.send_binary(csv_bytes, "text/csv; charset=utf-8", filename)
 
+        # BSAA Gift Distribution Live Sync State Endpoint
+        if req_path == "api/gift/state":
+            since_v = -1
+            m = re.search(r"since_version=(-?\d+)", query_str)
+            if m:
+                try:
+                    since_v = int(m.group(1))
+                except Exception:
+                    since_v = -1
+
+            if since_v == BSAA_GIFT_STATE_VERSION:
+                return self.send_json({"unchanged": True, "version": BSAA_GIFT_STATE_VERSION})
+
+            gift_status_map, logs, metrics = compute_bsaa_gift_state()
+            return self.send_json({
+                "unchanged": False,
+                "version": BSAA_GIFT_STATE_VERSION,
+                "attendees": BSAA_ATTENDEES if since_v < 0 else None,
+                "status_map": gift_status_map,
+                "logs": logs[:300],
+                "metrics": metrics
+            })
+
+        # BSAA Gift Terminal Info & QR
+        if req_path == "api/gift/info":
+            host = self.headers.get("Host", "blueprinteventmanagement.shop")
+            proto = "https" if not (host.startswith("localhost") or host.startswith("127.0.0.1")) else "http"
+            primary_url = f"{proto}://{host}/gift"
+            qr_svg = ""
+            if HAS_QRCODE:
+                try:
+                    factory = qrcode.image.svg.SvgPathImage
+                    img = qrcode.make(primary_url, image_factory=factory)
+                    buf = BytesIO()
+                    img.save(buf)
+                    qr_svg = buf.getvalue().decode("utf-8")
+                except Exception:
+                    pass
+            total_eligible = sum(1 for a in BSAA_ATTENDEES if a.get("role") == "Participant")
+            return self.send_json({
+                "primary_url": primary_url,
+                "urls": [primary_url],
+                "qr_svg": qr_svg,
+                "total_eligible": total_eligible,
+            })
+
+        # BSAA Gift Reports Export Endpoints
+        if req_path == "api/gift/export/csv":
+            csv_bytes = generate_bsaa_gift_csv()
+            filename = f"BSAA_Gift_Distribution_{datetime.now().strftime('%Y-%m-%d_%H-%M')}.csv"
+            return self.send_binary(csv_bytes, "text/csv; charset=utf-8", filename)
+
+        if req_path == "api/gift/export/xlsx":
+            if HAS_OPENPYXL:
+                xlsx_bytes = generate_bsaa_gift_xlsx()
+                filename = f"BSAA_Gift_Report_{datetime.now().strftime('%Y-%m-%d_%H-%M')}.xlsx"
+                return self.send_binary(xlsx_bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", filename)
+            else:
+                csv_bytes = generate_bsaa_gift_csv()
+                filename = f"BSAA_Gift_Distribution_{datetime.now().strftime('%Y-%m-%d_%H-%M')}.csv"
+                return self.send_binary(csv_bytes, "text/csv; charset=utf-8", filename)
+
         # Clean URL Routing for Frontend
         if req_path == "" or req_path == "app":
             self.path = "/index.html"
@@ -818,6 +1048,8 @@ class BlueprintHandler(SimpleHTTPRequestHandler):
             self.path = "/login.html"
         elif req_path == "bsaaevent":
             self.path = "/bsaaevent.html"
+        elif req_path in ["gift", "bsaagift", "bsaa-gift"]:
+            self.path = "/gift.html"
         elif not os.path.splitext(req_path)[1]:
             candidate = os.path.join(BASE_DIR, req_path + ".html")
             if os.path.isfile(candidate):
@@ -826,7 +1058,7 @@ class BlueprintHandler(SimpleHTTPRequestHandler):
         return super().do_GET()
 
     def do_POST(self):
-        global BSAA_STATE_VERSION
+        global BSAA_STATE_VERSION, BSAA_GIFT_STATE_VERSION
         req_path = self.path.split("?")[0].strip("/")
         body = self.read_json_body()
 
@@ -1003,10 +1235,110 @@ class BlueprintHandler(SimpleHTTPRequestHandler):
                 BSAA_STATE_VERSION += 1
             return self.send_json({"ok": True, "version": BSAA_STATE_VERSION})
 
+        # 8. BSAA Gift Distribution Scan Endpoint
+        if req_path == "api/gift/scan":
+            raw_code = body.get("raw_code") or ""
+            desk = str(body.get("desk") or "Gift Desk").strip()
+            staff = str(body.get("staff_user") or "").strip()
+            manual = bool(body.get("manual", False))
+            force = bool(body.get("force", False))
+
+            person = resolve_bsaa_attendee(raw_code)
+            if not person:
+                return self.send_json({
+                    "ok": False,
+                    "outcome": "INVALID",
+                    "raw_code": raw_code,
+                    "message": "Barcode not found in BSAA database",
+                    "version": BSAA_GIFT_STATE_VERSION,
+                })
+
+            # Check eligibility: Only Main Participant (role == 'Participant') gets gift
+            main_participant = None
+            if person.get("role") != "Participant":
+                fam_id = person.get("family_id")
+                main_participant = get_family_main_participant(fam_id)
+                if not force:
+                    gift_status_map, logs, metrics = compute_bsaa_gift_state()
+                    main_st = gift_status_map.get(main_participant["serial"], {}) if main_participant else {}
+                    return self.send_json({
+                        "ok": False,
+                        "outcome": "INELIGIBLE",
+                        "attendee": person,
+                        "main_participant": main_participant,
+                        "main_participant_state": main_st,
+                        "message": f"Ineligible: {person.get('role', 'Family Member')} ({person.get('name')}). Gifts are allocated to Main Participants only.",
+                        "status_map": gift_status_map,
+                        "logs": logs[:300],
+                        "metrics": metrics,
+                        "version": BSAA_GIFT_STATE_VERSION,
+                    })
+
+            target_person = person if person.get("role") == "Participant" else (main_participant or person)
+
+            with db_lock:
+                gift_status_map, logs, metrics = compute_bsaa_gift_state()
+                st = gift_status_map.get(target_person["serial"], {})
+
+                if st.get("status") == "DELIVERED" and not force:
+                    return self.send_json({
+                        "ok": False,
+                        "outcome": "ALREADY_DELIVERED",
+                        "attendee": target_person,
+                        "attendee_state": st,
+                        "scanned_person": person if person["serial"] != target_person["serial"] else None,
+                        "message": f"Gift ALREADY DELIVERED at {st.get('delivered_at')} ({st.get('desk') or 'Desk'})",
+                        "status_map": gift_status_map,
+                        "logs": logs[:300],
+                        "metrics": metrics,
+                        "version": BSAA_GIFT_STATE_VERSION,
+                    })
+
+                now_epoch = time.time()
+                ts_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                conn = get_db()
+                cur = conn.cursor()
+                notes = f"Badge scanned by {person['name']} ({person['serial']})" if person["serial"] != target_person["serial"] else ""
+                cur.execute(
+                    "INSERT INTO bsaa_gift_logs (serial, action, timestamp, desk, staff_user, manual, notes, created_epoch) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                    (target_person["serial"], "DELIVERED", ts_str, desk or "Gift Desk", staff, 1 if manual else 0, notes, now_epoch)
+                )
+                log_id = cur.lastrowid
+                conn.commit()
+                conn.close()
+
+                BSAA_GIFT_STATE_VERSION += 1
+                new_status_map, new_logs, new_metrics = compute_bsaa_gift_state()
+
+                return self.send_json({
+                    "ok": True,
+                    "outcome": "DELIVERED",
+                    "log_id": log_id,
+                    "attendee": target_person,
+                    "scanned_person": person if person["serial"] != target_person["serial"] else None,
+                    "attendee_state": new_status_map[target_person["serial"]],
+                    "message": "GIFT DELIVERED SUCCESSFULLY",
+                    "status_map": new_status_map,
+                    "logs": new_logs[:300],
+                    "metrics": new_metrics,
+                    "version": BSAA_GIFT_STATE_VERSION,
+                })
+
+        # 9. BSAA Gift Reset Endpoint
+        if req_path == "api/gift/reset":
+            with db_lock:
+                conn = get_db()
+                cur = conn.cursor()
+                cur.execute("DELETE FROM bsaa_gift_logs")
+                conn.commit()
+                conn.close()
+                BSAA_GIFT_STATE_VERSION += 1
+            return self.send_json({"ok": True, "version": BSAA_GIFT_STATE_VERSION})
+
         return self.send_json({"success": False, "error": "Not Found"}, 404)
 
     def do_DELETE(self):
-        global BSAA_STATE_VERSION
+        global BSAA_STATE_VERSION, BSAA_GIFT_STATE_VERSION
         req_path = self.path.split("?")[0].strip("/")
 
         # Delete user: /api/users/<id>
@@ -1031,6 +1363,19 @@ class BlueprintHandler(SimpleHTTPRequestHandler):
                 BSAA_STATE_VERSION += 1
             return self.send_json({"ok": True, "version": BSAA_STATE_VERSION})
 
+        # Delete BSAA gift log: /api/gift/logs/<id>
+        m_gift_del = re.match(r"^api/gift/logs/(\d+)$", req_path)
+        if m_gift_del:
+            log_id = int(m_gift_del.group(1))
+            with db_lock:
+                conn = get_db()
+                cur = conn.cursor()
+                cur.execute("DELETE FROM bsaa_gift_logs WHERE id = ?", (log_id,))
+                conn.commit()
+                conn.close()
+                BSAA_GIFT_STATE_VERSION += 1
+            return self.send_json({"ok": True, "version": BSAA_GIFT_STATE_VERSION})
+
         return self.send_json({"success": False, "error": "Not Found"}, 404)
 
 
@@ -1042,10 +1387,11 @@ def run():
     print(f"  THE BLUEPRINT EVENT MANAGEMENT // PRODUCTION SERVER & DB")
     print(f"  SQLite Database: {DB_PATH}")
     print(f"  Listening on:  http://{host}:{PORT}/")
-    print(f"  Login Gateway: http://0.0.0.0:{PORT}/login")
-    print(f"  Executive HQ:  http://0.0.0.0:{PORT}/admin")
-    print(f"  Gate Scanner:  http://0.0.0.0:{PORT}/bsaaevent")
-    print(f"  API Health:    http://0.0.0.0:{PORT}/api/health")
+    print(f"  Login Gateway: http://{host}:{PORT}/login")
+    print(f"  Executive HQ:  http://{host}:{PORT}/admin")
+    print(f"  Gate Scanner:  http://{host}:{PORT}/bsaaevent")
+    print(f"  Gift Terminal: http://{host}:{PORT}/gift")
+    print(f"  API Health:    http://{host}:{PORT}/api/health")
     print(f"  API Users:     http://0.0.0.0:{PORT}/api/users")
     print(f"================================================================")
     try:
