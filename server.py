@@ -1380,7 +1380,7 @@ class BlueprintHandler(SimpleHTTPRequestHandler):
 
 
 def run():
-    host = os.environ.get("HOST", "127.0.0.1")
+    host = os.environ.get("HOST", "0.0.0.0")
     server_address = (host, PORT)
     httpd = ServerClass(server_address, BlueprintHandler)
     print(f"================================================================")
