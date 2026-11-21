@@ -122,7 +122,7 @@
           <div>
             <label for="pageUserId" class="block bp-muted-text mb-1 font-bold text-[11px]">USER ID / USERNAME</label>
             <div class="relative">
-              <input id="pageUserId" type="text" placeholder="Enter your ID (e.g. superadmin)..." required autocomplete="username" autofocus class="w-full p-3 rounded-xl bp-input text-xs font-mono-cad font-medium text-white pl-10">
+              <input id="pageUserId" type="text" placeholder="Enter your ID (e.g. superadmin)..." required autocomplete="username" autofocus autocapitalize="none" autocorrect="off" spellcheck="false" class="w-full p-3 rounded-xl bp-input text-xs font-mono-cad font-medium text-white pl-10">
               <i class="fa-regular fa-user absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40 text-xs pointer-events-none"></i>
             </div>
           </div>
@@ -131,7 +131,7 @@
           <div>
             <label for="pagePassword" class="block bp-muted-text mb-1 font-bold text-[11px]">PASSWORD</label>
             <div class="relative">
-              <input id="pagePassword" type="password" placeholder="Enter your password..." required autocomplete="current-password" class="w-full p-3 rounded-xl bp-input text-xs font-mono-cad font-medium text-white pl-10 pr-10">
+              <input id="pagePassword" type="password" placeholder="Enter your password..." required autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" class="w-full p-3 rounded-xl bp-input text-xs font-mono-cad font-medium text-white pl-10 pr-10">
               <i class="fa-solid fa-lock absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40 text-xs pointer-events-none"></i>
               <button type="button" id="pageTogglePassBtn" class="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/50 hover:text-cyan-400 transition-colors" title="Toggle password visibility">
                 <i class="fa-regular fa-eye text-xs"></i>
@@ -165,7 +165,7 @@
   <script defer src="js/00-registry.js"></script>
   <script defer src="js/01-hud-shell.js"></script>
   <script defer src="js/02-visual-fx.js"></script>
-  <script defer src="js/09-admin-portal.js?v=6.3"></script>
+  <script defer src="js/09-admin-portal.js?v=7.2"></script>
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -218,17 +218,34 @@
         btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> <span>AUTHENTICATING...</span>';
         btn.disabled = true;
 
+        const admin = window.BlueprintApp?.admin || window.App?.admin || App.admin;
+        if (!admin || typeof admin.login !== 'function') {
+          btn.innerHTML = origText;
+          btn.disabled = false;
+          if (window.BlueprintApp && window.BlueprintApp.toast) {
+            window.BlueprintApp.toast('System initializing, please tap again in a moment...', 'warning', 'SYSTEM INIT');
+          }
+          return;
+        }
+
         try {
-          const success = await App.admin.login(id, pass);
+          const success = await admin.login(id, pass);
           if (success) {
-            App.toast('Authenticated! Redirecting...', 'success', 'ACCESS GRANTED');
+            if (window.BlueprintApp && window.BlueprintApp.toast) {
+              window.BlueprintApp.toast('Authenticated! Redirecting...', 'success', 'ACCESS GRANTED');
+            }
             const urlParams = new URLSearchParams(window.location.search);
             const targetRedirect = urlParams.get('redirect') || sessionStorage.getItem('bp_login_redirect');
             sessionStorage.removeItem('bp_login_redirect');
-            const destination = (targetRedirect === 'bsaaevent' || targetRedirect === '/bsaaevent') ? 'bsaaevent.html' : 'admin.html';
+            let destination = 'admin.html';
+            if (targetRedirect === 'bsaaevent' || targetRedirect === '/bsaaevent') {
+              destination = 'bsaaevent.html';
+            } else if (targetRedirect === 'gift' || targetRedirect === '/gift') {
+              destination = 'gift.html';
+            }
             setTimeout(() => {
               window.location.href = destination;
-            }, 500);
+            }, 300);
           } else {
             btn.innerHTML = origText;
             btn.disabled = false;
@@ -236,6 +253,10 @@
             passInput.focus();
           }
         } catch (err) {
+          console.error('[Login Error]', err);
+          if (window.BlueprintApp && window.BlueprintApp.toast) {
+            window.BlueprintApp.toast(err.message || 'Authentication error. Please check credentials.', 'danger', 'LOGIN ERROR');
+          }
           btn.innerHTML = origText;
           btn.disabled = false;
         }
