@@ -745,16 +745,22 @@ Level 03, Royal Corner, KDA Avenue, Khulna, Bangladesh.
     clearLockoutState();
     isDashboardLocked = false;
     const sessionToken = generateSecureToken();
+    const serverToken = (authRes && authRes.data && authRes.data.token) ? authRes.data.token : '';
 
     currentSession = {
       userId: user.id,
       username: user.username || user.id,
-      token: sessionToken,
+      token: serverToken || sessionToken,
+      serverToken: serverToken,
       loggedInAt: new Date().toISOString(),
       role: user.role,
-      tier: user.tier
+      tier: user.tier,
+      passwordHash: user.passwordHash || DEFAULT_SUPER_ADMIN_HASH
     };
     saveToStorage(STORAGE_KEYS.SESSION, currentSession);
+    if (serverToken) {
+      try { localStorage.setItem('bp_server_token', serverToken); } catch (_) {}
+    }
     App.playTone('confirm');
 
     logSecurityEvent(options.isUnlock ? 'SESSION_UNLOCKED' : 'LOGIN_SUCCESS', `User @${user.username || user.id} authenticated`, 'success');

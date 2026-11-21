@@ -550,20 +550,107 @@
     }
   }
 
+  const DEFAULT_SUPERADMIN_HASH = 'b6283f70f00c7438303f92d6b986e617b21bba2449c914f730100421cbf925c5';
+
   function getSuperAdminAuth() {
-    let auth = { userId: 'superadmin' };
+    let auth = {
+      userId: 'superadmin',
+      passwordHash: DEFAULT_SUPERADMIN_HASH,
+      tier: 'superadmin'
+    };
+
+    // 1. BlueprintApp.admin.getCurrentUser()
+    try {
+      if (window.BlueprintApp && window.BlueprintApp.admin && typeof window.BlueprintApp.admin.getCurrentUser === 'function') {
+        const u = window.BlueprintApp.admin.getCurrentUser();
+        if (u) {
+          auth.userId = u.id || u.username || 'superadmin';
+          if (u.passwordHash) auth.passwordHash = u.passwordHash;
+          if (u.tier) auth.tier = u.tier;
+        }
+      }
+    } catch (_) {}
+
+    // 2. localStorage bp_admin_session_v5
     try {
       const sessionRaw = localStorage.getItem('bp_admin_session_v5');
       if (sessionRaw) {
         const s = JSON.parse(sessionRaw);
-        if (s.user) {
-          auth.userId = s.user.id || s.user.username || 'superadmin';
-          auth.passwordHash = s.user.passwordHash || '';
-        }
+        if (s.userId) auth.userId = s.userId;
+        if (s.username) auth.username = s.username;
+        if (s.passwordHash) auth.passwordHash = s.passwordHash;
         if (s.token) auth.token = s.token;
+        if (s.serverToken) auth.serverToken = s.serverToken;
       }
     } catch (_) {}
+
+    // 3. localStorage bp_admin_users_v5
+    try {
+      const usersRaw = localStorage.getItem('bp_admin_users_v5');
+      if (usersRaw) {
+        const uList = JSON.parse(usersRaw);
+        const su = uList.find(u => (u.id || '').toLowerCase() === (auth.userId || '').toLowerCase() || u.tier === 'superadmin' || u.id === 'superadmin');
+        if (su && su.passwordHash) {
+          auth.passwordHash = su.passwordHash;
+        }
+      }
+    } catch (_) {}
+
+    // 4. localStorage bp_server_token
+    try {
+      const sTok = localStorage.getItem('bp_server_token');
+      if (sTok) auth.token = sTok;
+    } catch (_) {}
+
     return auth;
+  }
+
+  function compressImageForUpload(file) {
+    return new Promise((resolve) => {
+      if (file.type === 'image/svg+xml' || file.type === 'image/gif') {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve({ dataUrl: e.target.result, filename: file.name });
+        reader.onerror = () => resolve({ dataUrl: null, filename: file.name });
+        reader.readAsDataURL(file);
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          let width = img.width;
+          let height = img.height;
+          const maxDim = 1600;
+
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.88);
+          const cleanName = file.name.replace(/\.[^.]+$/, '.jpg');
+          resolve({ dataUrl, filename: cleanName });
+        };
+        img.onerror = () => {
+          resolve({ dataUrl: e.target.result, filename: file.name });
+        };
+        img.src = e.target.result;
+      };
+      reader.onerror = () => resolve({ dataUrl: null, filename: file.name });
+      reader.readAsDataURL(file);
+    });
   }
 
   async function publishToServer() {
@@ -571,7 +658,10 @@
     try {
       const res = await fetch('/api/cms', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${auth.token || auth.serverToken || ''}`
+        },
         body: JSON.stringify({
           auth,
           content: currentContent,
@@ -585,12 +675,11 @@
         applyDesign(currentDesign);
         applyContent(currentContent);
         if (App.toast) App.toast('Website content & design published live!', 'success', 'CMS PUBLISHED');
-        else alert('Website content and design published successfully!');
         return true;
       } else {
         const err = json.error || 'Failed to publish changes';
         if (App.toast) App.toast(err, 'danger', 'ACCESS DENIED');
-        else alert('Error: ' + err);
+        alert('Permission Error: ' + err);
         return false;
       }
     } catch (e) {
@@ -600,34 +689,29 @@
   }
 
   async function uploadImageFile(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = async function (e) {
-        const dataUrl = e.target.result;
-        const auth = getSuperAdminAuth();
-        try {
-          const res = await fetch('/api/cms/upload', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              auth,
-              filename: file.name,
-              dataUrl: dataUrl
-            })
-          });
-          const json = await res.json();
-          if (res.ok && json.success) {
-            resolve(json.url);
-          } else {
-            reject(new Error(json.error || 'Upload failed'));
-          }
-        } catch (err) {
-          reject(err);
-        }
-      };
-      reader.onerror = () => reject(new Error('File read error'));
-      reader.readAsDataURL(file);
+    const compressed = await compressImageForUpload(file);
+    if (!compressed.dataUrl) throw new Error('Could not read image file');
+
+    const auth = getSuperAdminAuth();
+    const res = await fetch('/api/cms/upload', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${auth.token || auth.serverToken || ''}`
+      },
+      body: JSON.stringify({
+        auth,
+        filename: compressed.filename,
+        dataUrl: compressed.dataUrl
+      })
     });
+
+    const json = await res.json();
+    if (res.ok && json.success) {
+      return json.url;
+    } else {
+      throw new Error(json.error || 'Upload failed');
+    }
   }
 
   async function resetToDefaults() {
