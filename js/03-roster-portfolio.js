@@ -573,6 +573,14 @@
     updateShortlistUI();
     renderTestimonial();
 
+    if (App && typeof App.on === 'function') {
+      App.on('cms:content-updated', () => {
+        renderTeam();
+        renderPortfolio();
+        renderTestimonial();
+      });
+    }
+
     App.registerFeature(81, 'Portfolio', 'Multi-Category Filter & Live Search', 'Filter executed events by category or instant keyword search.');
     App.registerFeature(82, 'Portfolio', 'Interactive Case Study Inspector Modal', 'Deep-dive production specs, crew counts, and metrics.');
     App.registerFeature(83, 'Portfolio', 'CAD vs Live Execution Comparison Slider', 'Draggable split-view contrasting wireframe layout against live stage output.');

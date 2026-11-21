@@ -29,3 +29,7 @@ blueprint-event-management.zip
 
 # Scratch testing scripts
 scratch/
+ 
+# Uploaded Media
+uploads/*
+!uploads/.gitkeep

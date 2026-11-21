@@ -57,6 +57,9 @@
     }));
     faqSearch?.addEventListener('input', renderFaqs);
     renderFaqs();
+    if (App && typeof App.on === 'function') {
+      App.on('cms:content-updated', renderFaqs);
+    }
     App.registerFeature(89, 'Comms & FAQ', 'Searchable Categorized FAQ Accordion', 'Filter questions across Booking, Technical AV, Venues, and Timelines.');
 
     /* ==================== 90. LEAD-TIME & READINESS CALCULATOR ==================== */

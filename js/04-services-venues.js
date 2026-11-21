@@ -271,6 +271,9 @@
     renderServices();
     renderVenues();
     App.on('lab:updated', renderVenues);
+    if (App && typeof App.on === 'function') {
+      App.on('cms:content-updated', renderServices);
+    }
 
     App.registerFeature(43, 'Services & Venues', 'Service Module Filter & Search', 'Instant keyword & discipline filter across all 6 core service modules.');
     App.registerFeature(44, 'Services & Venues', 'Service Technical Spec Sheet Modal', 'Detailed inventory, lead times, and direct brief dispatch.');

@@ -1255,6 +1255,11 @@ Level 03, Royal Corner, KDA Avenue, Khulna, Bangladesh.
         <div class="flex flex-wrap items-center gap-2 border-b border-current/15 pb-2 font-mono-cad text-xs">
           ${isSuper ? `
             <!-- Super Admin Tabs -->
+            <button type="button" data-admin-tab="cms" class="bp-portal-tab px-4 py-2 rounded-xl border border-cyan-400/50 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 font-bold flex items-center gap-2 ${activeAdminTab === 'cms' ? 'is-active' : ''}">
+              <i class="fa-solid fa-wand-magic-sparkles text-cyan-400"></i>
+              <span>CMS & DESIGN</span>
+              <span class="px-1.5 py-0.2 rounded bg-cyan-400/20 text-cyan-200 text-[10px] font-bold">SUPER</span>
+            </button>
             <button type="button" data-admin-tab="users" class="bp-portal-tab px-4 py-2 rounded-xl border border-current/25 font-bold flex items-center gap-2 ${activeAdminTab === 'users' ? 'is-active' : ''}">
               <i class="fa-solid fa-users-gear text-amber-400"></i>
               <span>USER MANAGEMENT</span>
@@ -1341,7 +1346,13 @@ Level 03, Royal Corner, KDA Avenue, Khulna, Bangladesh.
     if (!target) return;
     const isSuper = user.tier === 'superadmin' || user.id === 'superadmin' || user.id === 'admin';
 
-    if (activeAdminTab === 'users' && isSuper) {
+    if (activeAdminTab === 'cms' && isSuper) {
+      if (window.BlueprintApp && window.BlueprintApp.cms && typeof window.BlueprintApp.cms.renderCmsTab === 'function') {
+        window.BlueprintApp.cms.renderCmsTab(target, user, isSuper);
+      } else {
+        target.innerHTML = '<div class="p-8 text-center text-xs font-mono-cad bp-muted-text">Loading CMS Designer Engine...</div>';
+      }
+    } else if (activeAdminTab === 'users' && isSuper) {
       renderUserManagementTab(target, user);
     } else if (activeAdminTab === 'funds') {
       renderFundsTab(target, user, isSuper);
