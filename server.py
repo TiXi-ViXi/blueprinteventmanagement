@@ -174,6 +174,19 @@ def init_db():
             )
         """)
         cur.execute("""
+            CREATE TABLE IF NOT EXISTS bsaa_lottery_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                serial TEXT NOT NULL,
+                draw_number INTEGER NOT NULL,
+                prize_name TEXT DEFAULT '',
+                timestamp TEXT NOT NULL,
+                operator TEXT DEFAULT '',
+                manual INTEGER NOT NULL DEFAULT 0,
+                notes TEXT DEFAULT '',
+                created_epoch REAL NOT NULL
+            )
+        """)
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS site_cms (
                 key TEXT PRIMARY KEY,
                 data TEXT NOT NULL,
@@ -237,6 +250,7 @@ if os.path.exists(BSAA_ATTENDEES_PATH):
 
 BSAA_STATE_VERSION = 1
 BSAA_GIFT_STATE_VERSION = 1
+BSAA_LOTTERY_STATE_VERSION = 1
 with db_lock:
     try:
         conn = get_db()
@@ -249,6 +263,10 @@ with db_lock:
         row_gift = cur.fetchone()
         if row_gift and row_gift[0]:
             BSAA_GIFT_STATE_VERSION = int(row_gift[0]) + 1
+        cur.execute("SELECT MAX(id) FROM bsaa_lottery_logs")
+        row_lottery = cur.fetchone()
+        if row_lottery and row_lottery[0]:
+            BSAA_LOTTERY_STATE_VERSION = int(row_lottery[0]) + 1
         conn.close()
     except Exception:
         pass
@@ -516,6 +534,94 @@ def generate_bsaa_gift_xlsx():
         for col in ws.columns:
             max_len = max(len(str(c.value or "")) for c in col)
             ws.column_dimensions[col[0].column_letter].width = min(max_len + 4, 42)
+
+    out = BytesIO()
+    wb.save(out)
+    return out.getvalue()
+
+def compute_bsaa_lottery_state():
+    """Returns (winners_map, logs_newest_first, metrics)."""
+    with db_lock:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("SELECT id, serial, draw_number, prize_name, timestamp, operator, manual, notes, created_epoch FROM bsaa_lottery_logs ORDER BY draw_number ASC, id ASC")
+        rows = [dict(r) for r in cur.fetchall()]
+        conn.close()
+
+    winners_map = {}
+    logs = []
+    for r in rows:
+        ser = r["serial"]
+        p = BSAA_BY_SERIAL.get(ser.upper(), {})
+        entry = {
+            "id": r["id"],
+            "serial": ser,
+            "draw_number": r["draw_number"],
+            "prize_name": r["prize_name"] or f"Prize #{r['draw_number']}",
+            "timestamp": r["timestamp"],
+            "operator": r["operator"],
+            "manual": bool(r["manual"]),
+            "notes": r.get("notes", ""),
+            "created_epoch": r["created_epoch"],
+            "name": p.get("name", "Unknown"),
+            "role": p.get("role", "Participant"),
+            "company": p.get("company", ""),
+            "designation": p.get("designation", ""),
+            "phone": p.get("phone", ""),
+            "photo": p.get("photo", ""),
+            "family_id": p.get("family_id", "")
+        }
+        winners_map[ser] = entry
+        logs.append(entry)
+
+    logs.reverse()
+    metrics = {
+        "total_draws": len(rows),
+        "unique_winners": len(winners_map),
+        "next_draw_number": len(rows) + 1
+    }
+    return winners_map, logs, metrics
+
+def generate_bsaa_lottery_csv():
+    winners_map, logs, metrics = compute_bsaa_lottery_state()
+    buf = StringIO()
+    buf.write("\ufeff")
+    writer = csv.writer(buf)
+    writer.writerow(["Draw #", "Prize Name", "Serial", "Attendee Name", "Category", "Company", "Designation", "Phone", "Timestamp", "Drawn By"])
+    for l in reversed(logs):
+        writer.writerow([
+            l["draw_number"], l["prize_name"], l["serial"], l["name"], l["role"],
+            l["company"], l["designation"], l["phone"], l["timestamp"], l["operator"]
+        ])
+    return buf.getvalue().encode("utf-8")
+
+def generate_bsaa_lottery_xlsx():
+    if not HAS_OPENPYXL:
+        return generate_bsaa_lottery_csv()
+
+    winners_map, logs, metrics = compute_bsaa_lottery_state()
+    wb = openpyxl.Workbook()
+    header_fill = PatternFill(start_color="D97706", end_color="D97706", fill_type="solid")
+    header_font = Font(bold=True, color="FFFFFF")
+
+    ws1 = wb.active
+    ws1.title = "Lottery Winners"
+    cols1 = ["Draw #", "Prize Name", "Serial", "Attendee Name", "Category", "Company", "Designation", "Phone", "Timestamp", "Drawn By"]
+    ws1.append(cols1)
+    for cell in ws1[1]:
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal="center")
+
+    for l in reversed(logs):
+        ws1.append([
+            l["draw_number"], l["prize_name"], l["serial"], l["name"], l["role"],
+            l["company"], l["designation"], l["phone"], l["timestamp"], l["operator"]
+        ])
+
+    for col in ws1.columns:
+        max_len = max(len(str(c.value or "")) for c in col)
+        ws1.column_dimensions[col[0].column_letter].width = min(max_len + 4, 45)
 
     out = BytesIO()
     wb.save(out)
@@ -1184,6 +1290,46 @@ class BlueprintHandler(SimpleHTTPRequestHandler):
                 filename = f"BSAA_Gift_Distribution_{datetime.now().strftime('%Y-%m-%d_%H-%M')}.csv"
                 return self.send_binary(csv_bytes, "text/csv; charset=utf-8", filename)
 
+        # BSAA Grand Lottery Live Sync & State
+        if req_path in ["api/lottery/sync", "api/lottery/state"]:
+            since_v = -1
+            if "?" in self.path:
+                try:
+                    from urllib.parse import parse_qs
+                    qs = parse_qs(self.path.split("?", 1)[1])
+                    since_v = int(qs.get("since_v", ["-1"])[0])
+                except Exception:
+                    since_v = -1
+
+            if since_v >= 0 and since_v == BSAA_LOTTERY_STATE_VERSION:
+                return self.send_json({"unchanged": True, "version": BSAA_LOTTERY_STATE_VERSION})
+
+            winners_map, logs, metrics = compute_bsaa_lottery_state()
+            return self.send_json({
+                "unchanged": False,
+                "version": BSAA_LOTTERY_STATE_VERSION,
+                "attendees": BSAA_ATTENDEES if since_v < 0 else None,
+                "winners_map": winners_map,
+                "logs": logs[:300],
+                "metrics": metrics
+            })
+
+        # BSAA Lottery Reports Export Endpoints
+        if req_path == "api/lottery/export/csv":
+            csv_bytes = generate_bsaa_lottery_csv()
+            filename = f"BSAA_Lottery_Winners_{datetime.now().strftime('%Y-%m-%d_%H-%M')}.csv"
+            return self.send_binary(csv_bytes, "text/csv; charset=utf-8", filename)
+
+        if req_path == "api/lottery/export/xlsx":
+            if HAS_OPENPYXL:
+                xlsx_bytes = generate_bsaa_lottery_xlsx()
+                filename = f"BSAA_Lottery_Winners_{datetime.now().strftime('%Y-%m-%d_%H-%M')}.xlsx"
+                return self.send_binary(xlsx_bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", filename)
+            else:
+                csv_bytes = generate_bsaa_lottery_csv()
+                filename = f"BSAA_Lottery_Winners_{datetime.now().strftime('%Y-%m-%d_%H-%M')}.csv"
+                return self.send_binary(csv_bytes, "text/csv; charset=utf-8", filename)
+
         # Clean URL Routing for Frontend
         if req_path == "" or req_path == "app":
             self.path = "/index.html"
@@ -1195,6 +1341,8 @@ class BlueprintHandler(SimpleHTTPRequestHandler):
             self.path = "/bsaaevent.html"
         elif req_path in ["gift", "bsaagift", "bsaa-gift"]:
             self.path = "/gift.html"
+        elif req_path in ["lottery", "raffle", "bsaalottery", "bsaa-lottery"]:
+            self.path = "/lottery.html"
         elif not os.path.splitext(req_path)[1]:
             candidate = os.path.join(BASE_DIR, req_path + ".html")
             if os.path.isfile(candidate):
@@ -1553,10 +1701,86 @@ class BlueprintHandler(SimpleHTTPRequestHandler):
                 BSAA_GIFT_STATE_VERSION += 1
             return self.send_json({"ok": True, "version": BSAA_GIFT_STATE_VERSION})
 
+        # 10. BSAA Grand Lottery Winner Draw Endpoint
+        if req_path in ["api/lottery/draw", "api/lottery/scan"]:
+            raw_code = body.get("code") or body.get("serial") or body.get("barcode") or ""
+            prize_name = (body.get("prize_name") or "").strip()
+            operator = (body.get("operator") or "").strip()
+            notes = (body.get("notes") or "").strip()
+            manual = bool(body.get("manual", False))
+            force_duplicate = bool(body.get("force_duplicate", False))
+
+            person = resolve_bsaa_attendee(raw_code)
+            if not person:
+                return self.send_json({
+                    "ok": False,
+                    "error": "Attendee not found for scanned barcode / token",
+                    "raw_code": raw_code
+                }, 404)
+
+            winners_map, logs, metrics = compute_bsaa_lottery_state()
+            existing_winner = winners_map.get(person["serial"])
+            if existing_winner and not force_duplicate:
+                return self.send_json({
+                    "ok": False,
+                    "already_won": True,
+                    "existing_draw": existing_winner,
+                    "attendee": person,
+                    "message": f"ALREADY WON: {person['name']} already won {existing_winner['prize_name']} (Draw #{existing_winner['draw_number']})"
+                }, 200)
+
+            draw_num = int(body.get("draw_number") or (len(logs) + 1))
+            if not prize_name:
+                prize_name = f"Prize #{draw_num}"
+
+            now_epoch = time.time()
+            ts_str = datetime.now().strftime("%I:%M:%S %p")
+
+            with db_lock:
+                conn = get_db()
+                cur = conn.cursor()
+                cur.execute(
+                    "INSERT INTO bsaa_lottery_logs (serial, draw_number, prize_name, timestamp, operator, manual, notes, created_epoch) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                    (person["serial"], draw_num, prize_name, ts_str, operator or "@operator", 1 if manual else 0, notes, now_epoch)
+                )
+                log_id = cur.lastrowid
+                conn.commit()
+                conn.close()
+
+                global BSAA_LOTTERY_STATE_VERSION
+                BSAA_LOTTERY_STATE_VERSION += 1
+                new_winners_map, new_logs, new_metrics = compute_bsaa_lottery_state()
+
+                return self.send_json({
+                    "ok": True,
+                    "outcome": "WINNER_DRAWN",
+                    "log_id": log_id,
+                    "attendee": person,
+                    "draw_number": draw_num,
+                    "prize_name": prize_name,
+                    "timestamp": ts_str,
+                    "message": f"CONGRATULATIONS! {person['name']} is Draw #{draw_num} Winner!",
+                    "winners_map": new_winners_map,
+                    "logs": new_logs[:300],
+                    "metrics": new_metrics,
+                    "version": BSAA_LOTTERY_STATE_VERSION
+                })
+
+        # 11. BSAA Grand Lottery Reset Endpoint
+        if req_path == "api/lottery/reset":
+            with db_lock:
+                conn = get_db()
+                cur = conn.cursor()
+                cur.execute("DELETE FROM bsaa_lottery_logs")
+                conn.commit()
+                conn.close()
+                BSAA_LOTTERY_STATE_VERSION += 1
+            return self.send_json({"ok": True, "version": BSAA_LOTTERY_STATE_VERSION})
+
         return self.send_json({"success": False, "error": "Not Found"}, 404)
 
     def do_DELETE(self):
-        global BSAA_STATE_VERSION, BSAA_GIFT_STATE_VERSION
+        global BSAA_STATE_VERSION, BSAA_GIFT_STATE_VERSION, BSAA_LOTTERY_STATE_VERSION
         req_path = self.path.split("?")[0].strip("/")
 
         # Delete user: /api/users/<id>
@@ -1593,6 +1817,19 @@ class BlueprintHandler(SimpleHTTPRequestHandler):
                 conn.close()
                 BSAA_GIFT_STATE_VERSION += 1
             return self.send_json({"ok": True, "version": BSAA_GIFT_STATE_VERSION})
+
+        # Delete BSAA lottery log: /api/lottery/logs/<id>
+        m_lottery_del = re.match(r"^api/lottery/logs/(\d+)$", req_path)
+        if m_lottery_del:
+            log_id = int(m_lottery_del.group(1))
+            with db_lock:
+                conn = get_db()
+                cur = conn.cursor()
+                cur.execute("DELETE FROM bsaa_lottery_logs WHERE id = ?", (log_id,))
+                conn.commit()
+                conn.close()
+                BSAA_LOTTERY_STATE_VERSION += 1
+            return self.send_json({"ok": True, "version": BSAA_LOTTERY_STATE_VERSION})
 
         return self.send_json({"success": False, "error": "Not Found"}, 404)
 

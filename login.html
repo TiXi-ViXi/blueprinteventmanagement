@@ -90,11 +90,19 @@
             <i class="fa-solid fa-gauge-high"></i>
             <span>ENTER EXECUTIVE DASHBOARD →</span>
           </a>
-          <a href="bsaaevent.html" class="w-full py-3 rounded-xl border border-cyan-400/50 bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 font-mono-cad font-bold text-xs flex items-center justify-center gap-2 transition-all">
+          <a href="bsaaevent.html" class="w-full py-2.5 rounded-xl border border-cyan-400/50 bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 font-mono-cad font-bold text-xs flex items-center justify-center gap-2 transition-all">
             <i class="fa-solid fa-qrcode text-sm"></i>
             <span>OPEN BSAA GATE SCANNER (/bsaaevent) →</span>
           </a>
-          <button type="button" id="loginPageSignoutBtn" class="w-full py-2.5 rounded-xl border border-red-500/30 hover:border-red-500/60 text-red-400 font-mono-cad text-xs font-bold transition-colors">
+          <a href="gift.html" class="w-full py-2.5 rounded-xl border border-emerald-400/50 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 font-mono-cad font-bold text-xs flex items-center justify-center gap-2 transition-all">
+            <i class="fa-solid fa-gift text-sm"></i>
+            <span>OPEN BSAA GIFT PORTAL (/gift) →</span>
+          </a>
+          <a href="lottery.html" class="w-full py-2.5 rounded-xl border border-amber-400/50 bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 font-mono-cad font-bold text-xs flex items-center justify-center gap-2 transition-all">
+            <i class="fa-solid fa-trophy text-sm"></i>
+            <span>OPEN BSAA GRAND LOTTERY (/lottery) →</span>
+          </a>
+          <button type="button" id="loginPageSignoutBtn" class="w-full py-2 rounded-xl border border-red-500/30 hover:border-red-500/60 text-red-400 font-mono-cad text-xs font-bold transition-colors">
             Sign Out / Switch User
           </button>
         </div>
@@ -242,6 +250,8 @@
               destination = 'bsaaevent.html';
             } else if (targetRedirect === 'gift' || targetRedirect === '/gift') {
               destination = 'gift.html';
+            } else if (targetRedirect === 'lottery' || targetRedirect === '/lottery' || targetRedirect === 'raffle' || targetRedirect === '/raffle') {
+              destination = 'lottery.html';
             }
             setTimeout(() => {
               window.location.href = destination;
