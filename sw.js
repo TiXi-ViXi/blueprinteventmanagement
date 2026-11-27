@@ -3,7 +3,7 @@
    Khulna, Bangladesh
    ========================================================================== */
 
-const CACHE_NAME = 'blueprint-pwa-v2.2.0';
+const CACHE_NAME = 'blueprint-pwa-v2.3.0';
 
 const PRECACHE_ASSETS = [
   './',
@@ -11,6 +11,8 @@ const PRECACHE_ASSETS = [
   './login.html',
   './admin.html',
   './bsaaevent.html',
+  './gift.html',
+  './lottery.html',
   './css/blueprint.css',
   './js/00-registry.js',
   './js/01-hud-shell.js',
@@ -59,6 +61,11 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET') return;
 
   const url = new URL(req.url);
+
+  // Never cache /api/ requests — let them hit network or fail cleanly for offline fallback
+  if (url.pathname.startsWith('/api/')) {
+    return;
+  }
 
   // HTML navigation: Network first, cache fallback
   if (req.mode === 'navigate' || req.headers.get('accept')?.includes('text/html')) {

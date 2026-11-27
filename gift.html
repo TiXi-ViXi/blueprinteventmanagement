@@ -6154,18 +6154,84 @@ const EMBEDDED_PHOTOS = {"BSAA 001 A":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQ
       return familyGroups[familyId].find(m => m.role === "Participant") || null;
     }
 
+    const GIFT_LOGS_KEY = "bsaa_gift_logs_v1";
+    const GIFT_STATUS_KEY = "bsaa_gift_status_v1";
+    const GIFT_QUEUE_KEY = "bsaa_gift_offline_queue_v1";
+    let isFlushingGiftQueue = false;
+
+    function saveGiftLocalCache() {
+      try {
+        localStorage.setItem(GIFT_LOGS_KEY, JSON.stringify(giftLogs || []));
+        localStorage.setItem(GIFT_STATUS_KEY, JSON.stringify(giftStatusMap || {}));
+      } catch (_) {}
+    }
+    function loadGiftLocalCache() {
+      try {
+        const l = JSON.parse(localStorage.getItem(GIFT_LOGS_KEY) || "null");
+        const s = JSON.parse(localStorage.getItem(GIFT_STATUS_KEY) || "null");
+        if (Array.isArray(l)) giftLogs = l;
+        if (s && typeof s === "object") giftStatusMap = s;
+      } catch (_) {}
+    }
+    function getGiftOfflineQueue() {
+      try { return JSON.parse(localStorage.getItem(GIFT_QUEUE_KEY) || "[]"); }
+      catch { return []; }
+    }
+    function saveGiftOfflineQueue(q) {
+      localStorage.setItem(GIFT_QUEUE_KEY, JSON.stringify(q));
+    }
+    function updateGiftModePill(online) {
+      const pill = document.getElementById("mode-pill");
+      if (!pill) return;
+      const qLen = getGiftOfflineQueue().length;
+      if (online) {
+        pill.textContent = qLen > 0 ? `● SYNCING (${qLen})...` : "● LIVE SYNC";
+        pill.classList.remove("offline");
+      } else {
+        pill.textContent = qLen > 0 ? `● OFFLINE (${qLen} QUEUED)` : "● OFFLINE MODE";
+        pill.classList.add("offline");
+      }
+    }
+    async function flushGiftOfflineQueue() {
+      if (isFlushingGiftQueue || !navigator.onLine) return;
+      const q = getGiftOfflineQueue();
+      if (!q.length) return;
+      isFlushingGiftQueue = true;
+      try {
+        while (q.length > 0) {
+          const item = q[0];
+          const res = await fetch("/api/gift/scan", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(item)
+          });
+          if (!res.ok && res.status >= 500) break;
+          q.shift();
+          saveGiftOfflineQueue(q);
+        }
+        updateGiftModePill(true);
+      } catch (_) {
+        updateGiftModePill(false);
+      } finally {
+        isFlushingGiftQueue = false;
+      }
+    }
+
     // Real-Time Polling
     async function fetchGiftServerState(force = false) {
+      if (!navigator.onLine) {
+        updateGiftModePill(false);
+        return;
+      }
       try {
+        if (getGiftOfflineQueue().length > 0) {
+          await flushGiftOfflineQueue();
+        }
         const res = await fetch(`/api/gift/state?since_version=${force ? -1 : stateVersion}`);
         if (!res.ok) return;
         const data = await res.json();
 
-        const pill = document.getElementById("mode-pill");
-        if (pill) {
-          pill.textContent = "● LIVE SYNC";
-          pill.classList.remove("offline");
-        }
+        updateGiftModePill(true);
 
         if (data.unchanged) return;
 
@@ -6175,17 +6241,14 @@ const EMBEDDED_PHOTOS = {"BSAA 001 A":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQ
         giftStatusMap = data.status_map || {};
         giftLogs = data.logs || [];
         stateVersion = data.version || 0;
+        saveGiftLocalCache();
 
         document.getElementById("st-version").textContent = stateVersion;
         renderMetrics(data.metrics);
         renderLogs();
         renderDirectory();
       } catch (e) {
-        const pill = document.getElementById("mode-pill");
-        if (pill) {
-          pill.textContent = "○ RECONNECTING...";
-          pill.classList.add("offline");
-        }
+        updateGiftModePill(false);
       }
     }
 
@@ -6228,31 +6291,111 @@ const EMBEDDED_PHOTOS = {"BSAA 001 A":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQ
         staffUser = s.name || s.username || "Staff";
       } catch (e) {}
 
-      try {
-        const res = await fetch("/api/gift/scan", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            raw_code: trimmed,
-            desk: deskName,
-            staff_user: staffUser,
-            manual: isManual,
-            force: isForce
-          })
-        });
+      const giftPayload = {
+        raw_code: trimmed,
+        desk: deskName,
+        staff_user: staffUser,
+        manual: isManual,
+        force: isForce
+      };
 
-        const data = await res.json();
-        if (data.status_map) giftStatusMap = data.status_map;
-        if (data.logs) giftLogs = data.logs;
-        if (data.version) stateVersion = data.version;
+      let useOffline = !navigator.onLine;
+      if (!useOffline) {
+        try {
+          const res = await fetch("/api/gift/scan", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(giftPayload)
+          });
 
-        handleGiftResultUI(data);
-        renderMetrics(data.metrics);
-        renderLogs();
-        renderDirectory();
-      } catch (err) {
-        handleGiftResultUI({ ok: false, outcome: "INVALID", raw_code: trimmed, message: "Network error reaching Gift Server" });
+          const data = await res.json();
+          if (data.status_map) giftStatusMap = data.status_map;
+          if (data.logs) giftLogs = data.logs;
+          if (data.version) stateVersion = data.version;
+          saveGiftLocalCache();
+          updateGiftModePill(true);
+
+          handleGiftResultUI(data);
+          renderMetrics(data.metrics);
+          renderLogs();
+          renderDirectory();
+          return;
+        } catch (err) {
+          useOffline = true;
+        }
       }
+
+      // Offline Fallback Processing
+      const person = resolveAttendee(trimmed);
+      if (!person) {
+        handleGiftResultUI({ ok: false, outcome: "INVALID", raw_code: trimmed, message: "Barcode not found in BSAA database" });
+        updateGiftModePill(false);
+        return;
+      }
+
+      if (person.role !== "Participant") {
+        const mainP = getFamilyMainParticipant(person.family_id);
+        handleGiftResultUI({
+          ok: false,
+          outcome: "INELIGIBLE",
+          attendee: person,
+          main_participant: mainP,
+          status_map: giftStatusMap,
+          message: "Only Main Participants (A-series) are eligible for a gift"
+        });
+        updateGiftModePill(false);
+        return;
+      }
+
+      const existing = giftStatusMap[person.serial];
+      if (existing && existing.status === "DELIVERED" && !isForce) {
+        handleGiftResultUI({
+          ok: false,
+          outcome: "ALREADY_DELIVERED",
+          attendee: person,
+          attendee_state: existing,
+          message: `Gift already delivered at ${existing.delivered_at || "earlier"}`
+        });
+        updateGiftModePill(false);
+        return;
+      }
+
+      const nowStr = new Date().toLocaleTimeString([], { hour12: true, hour: "2-digit", minute: "2-digit", second: "2-digit" });
+      const newLog = {
+        id: Date.now() + Math.floor(Math.random() * 1000),
+        serial: person.serial,
+        name: person.name,
+        company: person.company,
+        desk: deskName,
+        staff_user: staffUser,
+        timestamp: nowStr,
+        manual: isManual
+      };
+      giftStatusMap[person.serial] = {
+        status: "DELIVERED",
+        delivered_at: nowStr,
+        desk: deskName,
+        staff_user: staffUser
+      };
+      giftLogs.unshift(newLog);
+      saveGiftLocalCache();
+
+      const q = getGiftOfflineQueue();
+      q.push(giftPayload);
+      saveGiftOfflineQueue(q);
+      updateGiftModePill(false);
+
+      handleGiftResultUI({
+        ok: true,
+        outcome: "DELIVERED",
+        log_id: newLog.id,
+        attendee: person,
+        attendee_state: giftStatusMap[person.serial],
+        message: "GIFT DELIVERED SUCCESSFULLY (OFFLINE QUEUED)"
+      });
+      renderMetrics();
+      renderLogs();
+      renderDirectory();
     }
 
     function handleGiftResultUI(res) {
@@ -6706,10 +6849,15 @@ const EMBEDDED_PHOTOS = {"BSAA 001 A":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQ
         loadAttendeesList(EMBEDDED_ATTENDEES);
       }
 
+      loadGiftLocalCache();
       renderMetrics();
+      renderLogs();
       renderDirectory();
 
       setupHardwareScanner();
+      updateGiftModePill(navigator.onLine);
+      window.addEventListener("online", () => fetchGiftServerState(true));
+      window.addEventListener("offline", () => updateGiftModePill(false));
 
       await fetchGiftServerState(true);
       setInterval(() => fetchGiftServerState(false), 1200);

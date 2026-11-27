@@ -6317,6 +6317,21 @@
           };
           winnersList.unshift(resultLog);
           winnersMap[person.serial] = resultLog;
+          try {
+            localStorage.setItem('bsaa_lottery_logs_v1', JSON.stringify(winnersList));
+            const lq = JSON.parse(localStorage.getItem('bsaa_lottery_offline_queue_v1') || '[]');
+            lq.push({
+              code: person.serial,
+              prize_name: prizeName,
+              draw_number: currentDrawNumber,
+              operator: operator,
+              force_duplicate: forceDuplicate
+            });
+            localStorage.setItem('bsaa_lottery_offline_queue_v1', JSON.stringify(lq));
+          } catch (_) {}
+          document.getElementById('syncIndicator').textContent = '● OFFLINE (QUEUED)';
+          document.getElementById('syncIndicator').style.borderColor = 'rgba(245,158,11,0.5)';
+          document.getElementById('syncIndicator').style.color = '#f59e0b';
         }
 
         // Reveal Winner on Stage!
@@ -6437,12 +6452,45 @@
         });
       }
 
+      // Load local cache on boot in case we start offline
+      try {
+        const cachedLogs = JSON.parse(localStorage.getItem('bsaa_lottery_logs_v1') || 'null');
+        if (Array.isArray(cachedLogs) && cachedLogs.length) {
+          winnersList = cachedLogs;
+          winnersMap = {};
+          winnersList.forEach(x => { winnersMap[x.serial] = x; });
+          currentDrawNumber = winnersList.length + 1;
+          drawNumberBadge.textContent = `DRAW #${currentDrawNumber}`;
+          updateLedgerUI();
+        }
+      } catch (_) {}
+
       // Periodic Server Sync
       async function syncWithServer() {
+        if (!navigator.onLine) {
+          const lqLen = (JSON.parse(localStorage.getItem('bsaa_lottery_offline_queue_v1') || '[]')).length;
+          document.getElementById('syncIndicator').textContent = lqLen > 0 ? `● OFFLINE (${lqLen} QUEUED)` : '● OFFLINE READY';
+          document.getElementById('syncIndicator').style.borderColor = 'rgba(245,158,11,0.5)';
+          document.getElementById('syncIndicator').style.color = '#f59e0b';
+          return;
+        }
         try {
+          const lq = JSON.parse(localStorage.getItem('bsaa_lottery_offline_queue_v1') || '[]');
+          while (lq.length > 0) {
+            const item = lq[0];
+            const fRes = await fetch('/api/lottery/draw', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(item)
+            });
+            if (!fRes.ok && fRes.status >= 500) break;
+            lq.shift();
+            localStorage.setItem('bsaa_lottery_offline_queue_v1', JSON.stringify(lq));
+          }
           const res = await fetch(`/api/lottery/sync?since_v=${lotteryStateVersion}`);
           const json = await res.json();
           if (json.unchanged) {
+            document.getElementById('syncIndicator').textContent = '● LIVE SYNC';
             document.getElementById('syncIndicator').style.borderColor = 'rgba(16,185,129,0.5)';
             document.getElementById('syncIndicator').style.color = '#10b981';
             return;
@@ -6451,15 +6499,19 @@
             lotteryStateVersion = json.version;
             winnersList = json.logs || [];
             winnersMap = json.winners_map || {};
+            try { localStorage.setItem('bsaa_lottery_logs_v1', JSON.stringify(winnersList)); } catch (_) {}
             currentDrawNumber = (json.metrics?.next_draw_number) || (winnersList.length + 1);
             if (!activeWinnerPending) {
               drawNumberBadge.textContent = `DRAW #${currentDrawNumber}`;
             }
             updateLedgerUI();
             document.getElementById('syncIndicator').textContent = '● LIVE SYNC';
+            document.getElementById('syncIndicator').style.borderColor = 'rgba(16,185,129,0.5)';
+            document.getElementById('syncIndicator').style.color = '#10b981';
           }
         } catch (_) {
-          document.getElementById('syncIndicator').textContent = '● OFFLINE READY';
+          const lqLen = (JSON.parse(localStorage.getItem('bsaa_lottery_offline_queue_v1') || '[]')).length;
+          document.getElementById('syncIndicator').textContent = lqLen > 0 ? `● OFFLINE (${lqLen} QUEUED)` : '● OFFLINE READY';
           document.getElementById('syncIndicator').style.borderColor = 'rgba(245,158,11,0.5)';
           document.getElementById('syncIndicator').style.color = '#f59e0b';
         }

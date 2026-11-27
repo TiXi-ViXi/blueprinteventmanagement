@@ -6279,15 +6279,16 @@
       }
 
       if (APP_MODE === "server") {
-        const pill = document.getElementById("mode-pill");
-        if (pill) {
-          pill.textContent = "● LIVE SYNC";
-          pill.classList.remove("offline");
-        }
+        updateModePill(navigator.onLine);
         document.getElementById("btn-connect-mobile").style.display = "inline-flex";
         document.getElementById("btn-export-xlsx").style.display = "inline-flex";
+        loadLocalLogs();
+        recomputeStandaloneState();
+        renderAll();
         await fetchServerState(true);
         setInterval(() => fetchServerState(false), 1200);
+        window.addEventListener("online", () => fetchServerState(true));
+        window.addEventListener("offline", () => updateModePill(false));
       } else {
         const pill = document.getElementById("mode-pill");
         pill.textContent = "● OFFLINE STANDALONE";
@@ -6313,29 +6314,76 @@
       document.getElementById("dir-count").textContent = attendees.length;
     }
 
-    async function fetchServerState(force = false) {
+    const OFFLINE_QUEUE_KEY = "bsaa_gate_offline_queue_v1";
+    let isFlushingOfflineQueue = false;
+
+    function getOfflineQueue() {
+      try { return JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || "[]"); }
+      catch { return []; }
+    }
+    function saveOfflineQueue(q) {
+      localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(q));
+    }
+    function updateModePill(online) {
+      const pill = document.getElementById("mode-pill");
+      if (!pill) return;
+      const qLen = getOfflineQueue().length;
+      if (online) {
+        pill.textContent = qLen > 0 ? `● SYNCING (${qLen})...` : "● LIVE SYNC";
+        pill.classList.remove("offline");
+      } else {
+        pill.textContent = qLen > 0 ? `● OFFLINE (${qLen} QUEUED)` : "● OFFLINE MODE";
+        pill.classList.add("offline");
+      }
+    }
+    async function flushOfflineQueue() {
+      if (isFlushingOfflineQueue || !navigator.onLine) return;
+      const queue = getOfflineQueue();
+      if (!queue.length) return;
+      isFlushingOfflineQueue = true;
       try {
+        while (queue.length > 0) {
+          const item = queue[0];
+          const res = await fetch("/api/scan", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(item)
+          });
+          if (!res.ok && res.status >= 500) break;
+          queue.shift();
+          saveOfflineQueue(queue);
+        }
+        updateModePill(true);
+      } catch (_) {
+        updateModePill(false);
+      } finally {
+        isFlushingOfflineQueue = false;
+      }
+    }
+
+    async function fetchServerState(force = false) {
+      if (!navigator.onLine) {
+        updateModePill(false);
+        return;
+      }
+      try {
+        if (getOfflineQueue().length > 0) {
+          await flushOfflineQueue();
+        }
         const res = await fetch(`/api/state?since_version=${force ? -1 : stateVersion}`);
         if (!res.ok) return;
         const data = await res.json();
-        const pill = document.getElementById("mode-pill");
-        if (pill) {
-          pill.textContent = "● LIVE SYNC";
-          pill.classList.remove("offline");
-        }
+        updateModePill(true);
         if (data.unchanged) return;
         if (data.attendees && data.attendees.length) loadAttendeesList(data.attendees);
         statusMap = data.status_map || {};
         scanLogs = data.logs || [];
         stateVersion = data.version || 0;
+        saveLocalLogs();
         renderAll();
         if (lastShownSerial && attendeeBySerial[lastShownSerial]) renderFamilyBox(attendeeBySerial[lastShownSerial]);
       } catch (e) {
-        const pill = document.getElementById("mode-pill");
-        if (pill) {
-          pill.textContent = "○ RECONNECTING...";
-          pill.classList.add("offline");
-        }
+        updateModePill(false);
       }
     }
 
@@ -6381,29 +6429,37 @@
       if (!trimmed) return;
       const gateName = (document.getElementById("gate-name-input").value || "Gate").trim();
 
+      const scanPayload = {
+        raw_code: trimmed,
+        mode: overrideAction ? (overrideAction === "ENTRY" ? "entry_force" : "exit_force") : gateMode,
+        cooldown_sec: overrideAction ? 0 : cooldownSec,
+        gate_name: gateName,
+        manual: isManual
+      };
+
+      let usedOfflineFallback = false;
       if (APP_MODE === "server") {
-        try {
-          const res = await fetch("/api/scan", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              raw_code: trimmed,
-              mode: overrideAction ? (overrideAction === "ENTRY" ? "entry_force" : "exit_force") : gateMode,
-              cooldown_sec: overrideAction ? 0 : cooldownSec,
-              gate_name: gateName,
-              manual: isManual
-            })
-          });
-          const data = await res.json();
-          if (data.status_map) statusMap = data.status_map;
-          if (data.logs) scanLogs = data.logs;
-          if (data.version) stateVersion = data.version;
-          handleScanResultUI(data);
-          renderAll();
-        } catch (err) {
-          handleScanResultUI({ ok: false, outcome: "INVALID", raw_code: trimmed, message: "Network error reaching PC server" });
+        if (navigator.onLine) {
+          try {
+            const res = await fetch("/api/scan", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(scanPayload)
+            });
+            const data = await res.json();
+            if (data.status_map) statusMap = data.status_map;
+            if (data.logs) { scanLogs = data.logs; saveLocalLogs(); }
+            if (data.version) stateVersion = data.version;
+            handleScanResultUI(data);
+            renderAll();
+            updateModePill(true);
+            return;
+          } catch (err) {
+            usedOfflineFallback = true;
+          }
+        } else {
+          usedOfflineFallback = true;
         }
-        return;
       }
 
       const person = resolveAttendee(trimmed);
@@ -6444,7 +6500,13 @@
       scanLogs.unshift(newLog);
       saveLocalLogs();
       recomputeStandaloneState();
-      handleScanResultUI({ ok: true, outcome: action, log_id: newLog.id, attendee: person, attendee_state: statusMap[person.serial], message: action === "ENTRY" ? "ENTRY GRANTED" : "EXIT RECORDED" });
+      if (usedOfflineFallback) {
+        const q = getOfflineQueue();
+        q.push({ ...scanPayload, mode: action === "ENTRY" ? "entry_force" : "exit_force", cooldown_sec: 0 });
+        saveOfflineQueue(q);
+        updateModePill(false);
+      }
+      handleScanResultUI({ ok: true, outcome: action, log_id: newLog.id, attendee: person, attendee_state: statusMap[person.serial], message: (action === "ENTRY" ? "ENTRY GRANTED" : "EXIT RECORDED") + (usedOfflineFallback ? " (OFFLINE QUEUED)" : "") });
       renderAll();
     }
 
