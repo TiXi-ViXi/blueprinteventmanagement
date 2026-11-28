@@ -706,124 +706,181 @@
 
     /* ============================================================
        DEDICATED BIG LED WALL DISPLAY MODE (body.led-display-mode)
+       High-Contrast Pure Black Outdoor LED Palette + Zero Clipping
        ============================================================ */
     #led-live-bar { display: none; }
+    body.led-display-mode {
+      background: #000000 !important;
+      background-image: none !important;
+      overflow-x: hidden;
+    }
     body.led-display-mode .stats-grid,
     body.led-display-mode .role-strip,
     body.led-display-mode .right-panel-col,
     body.led-display-mode .mode-switch,
     body.led-display-mode .scanner-toggles,
-    body.led-display-mode .top-actions .hide-in-led {
+    body.led-display-mode .top-actions .hide-in-led,
+    body.led-display-mode .bp-scanline {
       display: none !important;
+    }
+    body.led-display-mode .topbar {
+      background: #050810;
+      border-bottom: 2px solid var(--bp-accent);
+      padding: 8px 14px;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    body.led-display-mode .brand h1 {
+      font-size: clamp(12px, 1.3vw, 18px);
+      color: #ffffff;
     }
     body.led-display-mode #led-live-bar {
       display: inline-flex;
       align-items: center;
-      gap: 14px;
-      background: rgba(var(--bp-accent-rgb), 0.14);
-      border: 1.5px solid var(--bp-accent);
-      padding: 6px 14px;
-      border-radius: 9px;
+      gap: 12px;
+      background: #0a1424;
+      border: 2px solid var(--bp-accent);
+      padding: 5px 12px;
+      border-radius: 8px;
       font-family: 'Orbitron', monospace;
-      font-size: 15px;
+      font-size: clamp(12px, 1.2vw, 16px);
       font-weight: 800;
       color: #ffffff;
+      white-space: nowrap;
     }
     body.led-display-mode .container {
       max-width: 100%;
-      padding: 12px 24px;
+      padding: 10px 16px;
     }
     body.led-display-mode .main-grid {
       grid-template-columns: 1fr;
-      gap: 16px;
+      gap: 12px;
     }
     body.led-display-mode .left-panel-col {
-      padding: 18px 24px;
-      border-width: 2px;
+      background: #000000;
+      border: none;
+      box-shadow: none;
+      padding: 4px;
     }
     body.led-display-mode .scan-box-wrap {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
-      gap: 14px;
-      margin-bottom: 14px;
+      gap: 10px;
+      margin-bottom: 10px;
+      background: #070b14;
+      padding: 6px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(var(--bp-accent-rgb), 0.35);
     }
     body.led-display-mode .scan-indicator {
       margin-bottom: 0;
-      font-size: 13px;
+      font-size: 12px;
       white-space: nowrap;
-      gap: 12px;
-    }
-    body.led-display-mode .topbar {
-      padding: 8px 16px;
       gap: 10px;
-      flex-wrap: nowrap;
-    }
-    body.led-display-mode .brand h1 {
-      font-size: 13px;
-    }
-    body.led-display-mode #led-live-bar {
-      font-size: 13px;
-      padding: 5px 12px;
-      white-space: nowrap;
     }
     body.led-display-mode .scan-input-row {
       flex: 1;
+      min-width: 200px;
+    }
+    body.led-display-mode #scan-input {
+      padding: 7px 12px;
+      font-size: 15px;
+      background: #000000;
     }
     body.led-display-mode .result-card {
-      border-width: 3px;
+      background: #03060c;
+      border: 4px solid var(--bp-accent);
       border-radius: 18px;
-      box-shadow: 0 0 50px rgba(var(--bp-accent-rgb), 0.25);
+      box-shadow: 0 0 40px rgba(var(--bp-accent-rgb), 0.35);
     }
     body.led-display-mode .result-banner {
-      padding: 18px 28px;
-      font-size: clamp(24px, 2.8vw, 42px);
+      padding: clamp(12px, 1.6vw, 22px) clamp(16px, 2.5vw, 32px);
+      font-size: clamp(22px, 2.8vw, 44px);
+      font-weight: 900;
+    }
+    body.led-display-mode .banner-entry {
+      background: #00e676 !important;
+      color: #000000 !important;
+    }
+    body.led-display-mode .banner-exit {
+      background: #00e5ff !important;
+      color: #000000 !important;
     }
     body.led-display-mode .result-body {
-      padding: 28px 34px;
-      gap: 36px;
+      padding: clamp(16px, 2.5vw, 34px);
+      gap: clamp(18px, 3vw, 40px);
+      align-items: center;
     }
     body.led-display-mode .result-photo {
-      width: clamp(250px, 24vw, 390px);
-      height: clamp(310px, 30vw, 480px);
-      border-width: 4px;
+      width: clamp(190px, 26vw, 380px);
+      height: clamp(238px, 32vw, 470px);
+      border: 4px solid var(--bp-accent);
       border-radius: 16px;
+      box-shadow: 0 0 28px rgba(var(--bp-accent-rgb), 0.5);
     }
     body.led-display-mode .role-badge {
-      font-size: clamp(16px, 1.5vw, 24px);
-      padding: 8px 18px;
-      margin-bottom: 14px;
+      font-size: clamp(14px, 1.4vw, 22px);
+      padding: 6px 16px;
+      margin-bottom: 12px;
+      background: rgba(var(--bp-accent-rgb), 0.25);
+      color: #ffffff;
     }
     body.led-display-mode .result-name {
-      font-size: clamp(40px, 4.6vw, 76px);
+      font-size: clamp(32px, 4.5vw, 72px);
+      font-weight: 900;
+      color: #ffffff;
       line-height: 1.08;
     }
     body.led-display-mode .result-desig {
-      font-size: clamp(20px, 1.9vw, 32px);
-      margin-top: 10px;
+      font-size: clamp(18px, 1.9vw, 30px);
+      color: #f1f5f9;
+      margin-top: 8px;
     }
     body.led-display-mode .result-comp {
-      font-size: clamp(22px, 2.1vw, 36px);
-      margin-top: 10px;
+      font-size: clamp(20px, 2.2vw, 36px);
+      color: #ffd600;
+      margin-top: 8px;
     }
     body.led-display-mode .result-meta {
-      margin-top: 22px;
-      padding-top: 16px;
-      font-size: clamp(16px, 1.4vw, 22px);
-      gap: 10px 24px;
+      margin-top: 18px;
+      padding-top: 14px;
+      font-size: clamp(15px, 1.4vw, 22px);
+      gap: 8px 20px;
+      color: #cbd5e1;
     }
     body.led-display-mode .result-meta strong {
-      font-size: clamp(18px, 1.6vw, 26px);
+      font-size: clamp(17px, 1.6vw, 26px);
+      color: #00e5ff;
+    }
+    body.led-display-mode .family-box {
+      background: #050a14;
+      padding: 12px 18px;
+      border-radius: 14px;
+      border: 1.5px solid rgba(var(--bp-accent-rgb), 0.35);
     }
     body.led-display-mode .family-title {
-      font-size: 16px;
+      font-size: clamp(14px, 1.3vw, 18px);
+      color: #00e5ff;
     }
     body.led-display-mode .family-item {
-      font-size: 17px;
-      padding: 11px 16px;
+      font-size: clamp(15px, 1.4vw, 20px);
+      padding: 10px 14px;
+      background: #0a1220;
+      color: #ffffff;
     }
     body.led-display-mode .status-pill {
-      font-size: 14px;
+      font-size: clamp(12px, 1.1vw, 16px);
       padding: 5px 12px;
+    }
+    @media (max-width: 780px) {
+      body.led-display-mode .result-body {
+        flex-direction: column;
+        text-align: center;
+      }
+      body.led-display-mode .result-meta {
+        justify-items: center;
+      }
     }
 
     .result-actions {
@@ -1121,6 +1178,9 @@
 
     <div class="top-actions">
       <button id="btn-led-mode" class="btn" onclick="toggleLedDisplayMode()" style="border-color:rgba(16,185,129,0.75);background:rgba(16,185,129,0.22);color:#34d399;font-weight:800;font-size:13px;" title="Toggle Full-Screen Giant LED Check-In Display">📺 BIG DISPLAY</button>
+      <a href="display.html" target="_blank" class="btn hide-in-led" style="text-decoration:none;display:inline-flex;align-items:center;gap:5px;border-color:rgba(0,229,255,0.65);background:rgba(0,229,255,0.14);color:#00e5ff;font-weight:800;" title="Open Dedicated LED Wall Window (/display) to drag to external screen">
+        <span>🖥 LED WALL</span>
+      </a>
       <a href="admin.html" class="btn hide-in-led" style="text-decoration:none;display:inline-flex;align-items:center;gap:5px;border-color:rgba(0,240,255,0.45);color:#00f0ff;font-weight:700;" title="Return to Blueprint Executive Dashboard">
         <span>⚡ DASHBOARD</span>
       </a>

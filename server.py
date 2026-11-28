@@ -1343,6 +1343,8 @@ class BlueprintHandler(SimpleHTTPRequestHandler):
             self.path = "/gift.html"
         elif req_path in ["lottery", "raffle", "bsaalottery", "bsaa-lottery"]:
             self.path = "/lottery.html"
+        elif req_path in ["display", "led", "welcome", "stage"]:
+            self.path = "/display.html"
         elif not os.path.splitext(req_path)[1]:
             candidate = os.path.join(BASE_DIR, req_path + ".html")
             if os.path.isfile(candidate):
