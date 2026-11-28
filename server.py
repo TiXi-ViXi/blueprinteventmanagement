@@ -26,6 +26,11 @@ Provides:
 
 import os
 import sys
+
+if sys.stdout is None:
+    sys.stdout = open(os.devnull, "w", encoding="utf-8")
+if sys.stderr is None:
+    sys.stderr = open(os.devnull, "w", encoding="utf-8")
 import re
 import json
 import time
@@ -1063,6 +1068,13 @@ def is_superadmin_request(headers, body):
 class BlueprintHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=BASE_DIR, **kwargs)
+
+    def log_message(self, format, *args):
+        if sys.stderr is not None:
+            try:
+                super().log_message(format, *args)
+            except Exception:
+                pass
 
     def send_cors_headers(self):
         self.send_header("Access-Control-Allow-Origin", "*")
