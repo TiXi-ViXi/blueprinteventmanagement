@@ -544,7 +544,7 @@ def compute_bsaa_lottery_state():
     with db_lock:
         conn = get_db()
         cur = conn.cursor()
-        cur.execute("SELECT id, serial, draw_number, prize_name, timestamp, operator, manual, notes, created_epoch FROM bsaa_lottery_logs ORDER BY draw_number ASC, id ASC")
+        cur.execute("SELECT id, serial, draw_number, prize_name, timestamp, operator, manual, notes, created_epoch FROM bsaa_lottery_logs ORDER BY id ASC")
         rows = [dict(r) for r in cur.fetchall()]
         conn.close()
 
@@ -578,7 +578,7 @@ def compute_bsaa_lottery_state():
     metrics = {
         "total_draws": len(rows),
         "unique_winners": len(winners_map),
-        "next_draw_number": len(rows) + 1
+        "next_draw_number": max(1, 14 - len(rows))
     }
     return winners_map, logs, metrics
 
@@ -1731,9 +1731,9 @@ class BlueprintHandler(SimpleHTTPRequestHandler):
                     "message": f"ALREADY WON: {person['name']} already won {existing_winner['prize_name']} (Draw #{existing_winner['draw_number']})"
                 }, 200)
 
-            draw_num = int(body.get("draw_number") or (len(logs) + 1))
+            draw_num = int(body.get("draw_number") or max(1, 14 - len(logs)))
             if not prize_name:
-                prize_name = f"Prize #{draw_num}"
+                prize_name = "1st Prize — Bumper Prize" if draw_num == 1 else ("2nd Prize" if draw_num == 2 else ("3rd Prize" if draw_num == 3 else f"{draw_num}th Prize"))
 
             now_epoch = time.time()
             ts_str = datetime.now().strftime("%I:%M:%S %p")

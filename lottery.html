@@ -772,8 +772,8 @@
     <div class="stage-hud">
       <!-- Prize Setup Field -->
       <div class="prize-input-box">
-        <span class="prize-badge font-mono-cad" id="drawNumberBadge">DRAW #1</span>
-        <input type="text" id="prizeNameInput" class="prize-input" placeholder="Enter Prize Title (e.g. 1st Prize — Smart LED TV)..." value="1st Prize — Bumper Prize" />
+        <span class="prize-badge font-mono-cad" id="drawNumberBadge" style="cursor:pointer;" title="Click to adjust Prize # manually">DRAW #14</span>
+        <input type="text" id="prizeNameInput" class="prize-input" placeholder="Enter Prize Title (e.g. 14th Prize down to 1st Prize)..." value="14th Prize" />
       </div>
 
       <!-- Eligibility Filter -->
@@ -5965,7 +5965,18 @@
       let lotteryStateVersion = 0;
       let winnersList = []; // Array of logs
       let winnersMap = {}; // serial -> entry
-      let currentDrawNumber = 1;
+      const TOTAL_LOTTERY_PRIZES = 14;
+      let currentDrawNumber = 14;
+      let prizeManuallyEdited = false;
+      function formatPrizeTitle(num) {
+        if (num === 1) return '1st Prize — Bumper Prize';
+        if (num === 2) return '2nd Prize';
+        if (num === 3) return '3rd Prize';
+        return `${num}th Prize`;
+      }
+      function getNextCountdownNumber(count) {
+        return Math.max(1, TOTAL_LOTTERY_PRIZES - (count || 0));
+      }
       let activeWinnerPending = null;
       let lastScannedCode = null;
 
@@ -6377,11 +6388,12 @@
 
       function proceedToNextDraw() {
         activeWinnerPending = null;
-        currentDrawNumber = winnersList.length + 1;
+        prizeManuallyEdited = false;
+        currentDrawNumber = getNextCountdownNumber(winnersList.length);
         drawNumberBadge.textContent = `DRAW #${currentDrawNumber}`;
 
-        // Suggest next prize title
-        prizeNameInput.value = `Prize #${currentDrawNumber}`;
+        // Suggest next countdown prize title (14 down to 1)
+        prizeNameInput.value = formatPrizeTitle(currentDrawNumber);
 
         // Reset Stage View
         winnerCardWrap.style.display = 'none';
@@ -6392,7 +6404,7 @@
         scannerInput.focus();
 
         playTone('click');
-        toast(`Ready for Draw #${currentDrawNumber}!`, 'success');
+        toast(`Ready for Draw #${currentDrawNumber} (${prizeNameInput.value})!`, 'success');
       }
 
       function updateLedgerUI() {
@@ -6453,6 +6465,18 @@
         });
       }
 
+      prizeNameInput.addEventListener('input', () => { prizeManuallyEdited = true; });
+      drawNumberBadge.addEventListener('click', () => {
+        const val = prompt('Set Prize / Draw Number (1 to 14):', String(currentDrawNumber));
+        const n = parseInt(val, 10);
+        if (!isNaN(n) && n >= 1) {
+          currentDrawNumber = n;
+          drawNumberBadge.textContent = `DRAW #${currentDrawNumber}`;
+          prizeNameInput.value = formatPrizeTitle(currentDrawNumber);
+          prizeManuallyEdited = false;
+        }
+      });
+
       // Load local cache on boot in case we start offline
       try {
         const cachedLogs = JSON.parse(localStorage.getItem('bsaa_lottery_logs_v1') || 'null');
@@ -6460,8 +6484,9 @@
           winnersList = cachedLogs;
           winnersMap = {};
           winnersList.forEach(x => { winnersMap[x.serial] = x; });
-          currentDrawNumber = winnersList.length + 1;
+          currentDrawNumber = getNextCountdownNumber(winnersList.length);
           drawNumberBadge.textContent = `DRAW #${currentDrawNumber}`;
+          if (!prizeManuallyEdited) prizeNameInput.value = formatPrizeTitle(currentDrawNumber);
           updateLedgerUI();
         }
       } catch (_) {}
@@ -6501,9 +6526,12 @@
             winnersList = json.logs || [];
             winnersMap = json.winners_map || {};
             try { localStorage.setItem('bsaa_lottery_logs_v1', JSON.stringify(winnersList)); } catch (_) {}
-            currentDrawNumber = (json.metrics?.next_draw_number) || (winnersList.length + 1);
+            currentDrawNumber = (json.metrics?.next_draw_number) || getNextCountdownNumber(winnersList.length);
             if (!activeWinnerPending) {
               drawNumberBadge.textContent = `DRAW #${currentDrawNumber}`;
+              if (!prizeManuallyEdited) {
+                prizeNameInput.value = formatPrizeTitle(currentDrawNumber);
+              }
             }
             updateLedgerUI();
             document.getElementById('syncIndicator').textContent = '● LIVE SYNC';
@@ -6652,12 +6680,17 @@
         } catch (_) {}
         winnersList = [];
         winnersMap = {};
-        currentDrawNumber = 1;
-        drawNumberBadge.textContent = 'DRAW #1';
-        prizeNameInput.value = '1st Prize — Bumper Prize';
+        try {
+          localStorage.removeItem('bsaa_lottery_logs_v1');
+          localStorage.removeItem('bsaa_lottery_offline_queue_v1');
+        } catch (_) {}
+        prizeManuallyEdited = false;
+        currentDrawNumber = 14;
+        drawNumberBadge.textContent = 'DRAW #14';
+        prizeNameInput.value = '14th Prize';
         updateLedgerUI();
         ledgerModal.style.display = 'none';
-        toast('Lottery draws have been reset!', 'warning');
+        toast('Lottery draws reset! Starting countdown from Prize #14 down to #1.', 'warning');
       });
 
       // Manual Lookup Modal
