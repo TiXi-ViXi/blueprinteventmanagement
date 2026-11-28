@@ -408,20 +408,20 @@
     .gate-input:focus { border-color: var(--bp-accent); outline: none; }
 
     .container {
-      max-width: 1400px;
+      max-width: 1480px;
       margin: 0 auto;
-      padding: 16px;
+      padding: 12px 16px;
     }
 
     /* Stats Grid */
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
-      margin-bottom: 12px;
+      gap: 10px;
+      margin-bottom: 10px;
     }
     .stat-card {
-      padding: 14px 16px;
+      padding: 10px 14px;
     }
     .stat-label {
       font-family: 'JetBrains Mono', monospace;
@@ -433,21 +433,21 @@
     }
     .stat-value {
       font-family: 'Orbitron', 'Space Grotesk', sans-serif;
-      font-size: 30px;
+      font-size: 26px;
       font-weight: 800;
-      margin-top: 6px;
+      margin-top: 3px;
       line-height: 1.05;
     }
     .stat-sub {
       font-family: 'JetBrains Mono', monospace;
       font-size: 11px;
       color: var(--bp-text-soft);
-      margin-top: 5px;
+      margin-top: 3px;
     }
 
     .role-strip {
-      padding: 9px 14px;
-      margin-bottom: 16px;
+      padding: 7px 14px;
+      margin-bottom: 12px;
       display: flex;
       flex-wrap: wrap;
       gap: 14px;
@@ -462,13 +462,13 @@
     /* Main Layout */
     .main-grid {
       display: grid;
-      grid-template-columns: 470px 1fr;
+      grid-template-columns: 1.35fr 0.85fr;
       gap: 16px;
       align-items: start;
     }
 
     .panel {
-      padding: 16px;
+      padding: 14px;
     }
 
     /* Scanner Mode Selector */
@@ -587,31 +587,33 @@
       background: rgba(var(--bp-accent-rgb), 0.12);
     }
 
-    /* Result Card */
+    /* Result Card - Upgraded for High-Visibility LED / Large Displays */
     .result-card {
       position: relative;
-      border-radius: 11px;
-      border: 1px solid var(--bp-border-strong);
+      border-radius: 14px;
+      border: 2px solid var(--bp-border-strong);
       background: var(--bp-bg-elevated);
       overflow: hidden;
+      margin-bottom: 14px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
     }
     .result-banner {
       font-family: 'Orbitron', 'Space Grotesk', sans-serif;
-      padding: 11px 14px;
-      font-weight: 800;
-      font-size: 13px;
-      letter-spacing: 0.8px;
+      padding: 14px 18px;
+      font-weight: 900;
+      font-size: clamp(16px, 1.5vw, 22px);
+      letter-spacing: 1px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       position: relative;
       z-index: 3;
     }
-    .banner-idle { background: rgba(var(--bp-accent-rgb), 0.12); color: var(--bp-accent); border-bottom: 1px solid var(--bp-border); }
-    .banner-entry { background: var(--bp-success); color: #022c22; }
-    .banner-exit { background: var(--bp-accent); color: var(--bp-btn-text); }
-    .banner-warn { background: var(--bp-secondary); color: #090500; }
-    .banner-error { background: var(--bp-danger); color: #ffffff; }
+    .banner-idle { background: rgba(var(--bp-accent-rgb), 0.16); color: var(--bp-accent); border-bottom: 2px solid var(--bp-border-strong); }
+    .banner-entry { background: #10b981; color: #022c22; }
+    .banner-exit { background: var(--bp-accent); color: #020617; }
+    .banner-warn { background: #f59e0b; color: #090500; }
+    .banner-error { background: #ef4444; color: #ffffff; }
     .banner-already-inside {
       background: #dc2626 !important;
       color: #ffffff !important;
@@ -624,28 +626,28 @@
       100% { background: #991b1b; box-shadow: 0 0 24px rgba(239, 68, 68, 0.7); }
     }
     .card-alert-red {
-      border: 2px solid #ef4444 !important;
-      box-shadow: 0 0 30px rgba(239, 68, 68, 0.55) !important;
+      border: 3px solid #ef4444 !important;
+      box-shadow: 0 0 36px rgba(239, 68, 68, 0.65) !important;
     }
     .photo-alert-red {
       border-color: #ef4444 !important;
-      box-shadow: 0 0 22px rgba(239, 68, 68, 0.7) !important;
+      box-shadow: 0 0 26px rgba(239, 68, 68, 0.8) !important;
     }
 
     .result-body {
-      padding: 14px;
+      padding: 18px 20px;
       display: flex;
-      gap: 14px;
-      align-items: flex-start;
+      gap: 22px;
+      align-items: center;
       position: relative;
       z-index: 3;
     }
     .result-photo {
-      width: 114px;
-      height: 142px;
-      border-radius: 9px;
-      border: 2px solid var(--bp-border-strong);
-      box-shadow: var(--bp-glow);
+      width: 195px;
+      height: 242px;
+      border-radius: 12px;
+      border: 3px solid var(--bp-accent);
+      box-shadow: 0 0 26px rgba(var(--bp-accent-rgb), 0.35);
       object-fit: cover;
       background: var(--bp-surface-solid);
       flex-shrink: 0;
@@ -654,48 +656,161 @@
     .role-badge {
       font-family: 'JetBrains Mono', monospace;
       display: inline-block;
-      font-size: 10px;
-      font-weight: 700;
+      font-size: 13px;
+      font-weight: 800;
       text-transform: uppercase;
-      letter-spacing: 0.7px;
-      padding: 3px 8px;
-      border-radius: 5px;
-      background: rgba(var(--bp-accent-rgb), 0.14);
-      border: 1px solid var(--bp-border);
+      letter-spacing: 0.9px;
+      padding: 5px 12px;
+      border-radius: 6px;
+      background: rgba(var(--bp-accent-rgb), 0.18);
+      border: 1.5px solid var(--bp-accent);
       color: var(--bp-accent);
-      margin-bottom: 6px;
+      margin-bottom: 10px;
     }
     .result-name {
       font-family: 'Space Grotesk', sans-serif;
-      font-size: 20px;
-      font-weight: 700;
-      color: var(--bp-text);
-      line-height: 1.2;
+      font-size: clamp(26px, 2.5vw, 40px);
+      font-weight: 800;
+      color: #ffffff;
+      line-height: 1.12;
       word-break: break-word;
+      text-shadow: 0 2px 12px rgba(0,0,0,0.45);
     }
+    [data-theme="light"] .result-name { color: #0f172a; text-shadow: none; }
     .result-desig {
-      font-size: 13px;
-      color: var(--bp-text-soft);
-      margin-top: 3px;
-    }
-    .result-comp {
-      font-size: 13px;
+      font-size: clamp(15px, 1.3vw, 20px);
       font-weight: 600;
+      color: #e2e8f0;
+      margin-top: 6px;
+    }
+    [data-theme="light"] .result-desig { color: #334155; }
+    .result-comp {
+      font-size: clamp(16px, 1.4vw, 22px);
+      font-weight: 800;
       color: var(--bp-secondary);
-      margin-top: 4px;
+      margin-top: 6px;
     }
     .result-meta {
-      margin-top: 10px;
-      padding-top: 8px;
-      border-top: 1px dashed var(--bp-border);
+      margin-top: 14px;
+      padding-top: 10px;
+      border-top: 1.5px dashed var(--bp-border-strong);
       font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
-      color: var(--bp-muted);
+      font-size: 14px;
+      color: var(--bp-text-soft);
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 5px 10px;
+      gap: 7px 14px;
     }
-    .result-meta strong { color: var(--bp-text); }
+    .result-meta strong { color: #ffffff; font-size: 15px; }
+    [data-theme="light"] .result-meta strong { color: #0f172a; }
+
+    /* ============================================================
+       DEDICATED BIG LED WALL DISPLAY MODE (body.led-display-mode)
+       ============================================================ */
+    #led-live-bar { display: none; }
+    body.led-display-mode .stats-grid,
+    body.led-display-mode .role-strip,
+    body.led-display-mode .right-panel-col,
+    body.led-display-mode .mode-switch,
+    body.led-display-mode .scanner-toggles,
+    body.led-display-mode .top-actions .hide-in-led {
+      display: none !important;
+    }
+    body.led-display-mode #led-live-bar {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      background: rgba(var(--bp-accent-rgb), 0.14);
+      border: 1.5px solid var(--bp-accent);
+      padding: 6px 14px;
+      border-radius: 9px;
+      font-family: 'Orbitron', monospace;
+      font-size: 15px;
+      font-weight: 800;
+      color: #ffffff;
+    }
+    body.led-display-mode .container {
+      max-width: 100%;
+      padding: 12px 24px;
+    }
+    body.led-display-mode .main-grid {
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+    body.led-display-mode .left-panel-col {
+      padding: 18px 24px;
+      border-width: 2px;
+    }
+    body.led-display-mode .scan-box-wrap {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    body.led-display-mode .scan-indicator {
+      margin-bottom: 0;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+    body.led-display-mode .scan-input-row {
+      flex: 1;
+    }
+    body.led-display-mode .result-card {
+      border-width: 3px;
+      border-radius: 18px;
+      box-shadow: 0 0 50px rgba(var(--bp-accent-rgb), 0.25);
+    }
+    body.led-display-mode .result-banner {
+      padding: 18px 28px;
+      font-size: clamp(24px, 2.8vw, 42px);
+    }
+    body.led-display-mode .result-body {
+      padding: 28px 34px;
+      gap: 36px;
+    }
+    body.led-display-mode .result-photo {
+      width: clamp(250px, 24vw, 390px);
+      height: clamp(310px, 30vw, 480px);
+      border-width: 4px;
+      border-radius: 16px;
+    }
+    body.led-display-mode .role-badge {
+      font-size: clamp(16px, 1.5vw, 24px);
+      padding: 8px 18px;
+      margin-bottom: 14px;
+    }
+    body.led-display-mode .result-name {
+      font-size: clamp(40px, 4.6vw, 76px);
+      line-height: 1.08;
+    }
+    body.led-display-mode .result-desig {
+      font-size: clamp(20px, 1.9vw, 32px);
+      margin-top: 10px;
+    }
+    body.led-display-mode .result-comp {
+      font-size: clamp(22px, 2.1vw, 36px);
+      margin-top: 10px;
+    }
+    body.led-display-mode .result-meta {
+      margin-top: 22px;
+      padding-top: 16px;
+      font-size: clamp(16px, 1.4vw, 22px);
+      gap: 10px 24px;
+    }
+    body.led-display-mode .result-meta strong {
+      font-size: clamp(18px, 1.6vw, 26px);
+    }
+    body.led-display-mode .family-title {
+      font-size: 16px;
+    }
+    body.led-display-mode .family-item {
+      font-size: 17px;
+      padding: 11px 16px;
+    }
+    body.led-display-mode .status-pill {
+      font-size: 14px;
+      padding: 5px 12px;
+    }
 
     .result-actions {
       padding: 0 14px 14px;
@@ -954,7 +1069,7 @@
       100% { top: 15%; opacity: 0.8; }
     }
 
-    @media (max-width: 980px) {
+    @media (max-width: 1120px) {
       .main-grid { grid-template-columns: 1fr; }
       .stats-grid { grid-template-columns: repeat(2, 1fr); }
     }
@@ -963,9 +1078,9 @@
       .topbar { padding: 10px 12px; }
       .brand h1 { font-size: 13px; }
       .stat-value { font-size: 24px; }
-      .result-body { flex-direction: row; gap: 12px; }
-      .result-photo { width: 88px; height: 110px; }
-      .result-name { font-size: 16px; }
+      .result-body { flex-direction: row; gap: 14px; padding: 14px; }
+      .result-photo { width: 100px; height: 126px; }
+      .result-name { font-size: 20px; }
       .result-meta { grid-template-columns: 1fr; }
       .gate-input { width: 108px; }
     }
@@ -984,31 +1099,38 @@
       </div>
     </div>
 
+    <div id="led-live-bar">
+      <span style="color:var(--bp-success);">INSIDE: <span id="led-st-inside">0</span></span>
+      <span style="opacity:0.4;">|</span>
+      <span style="color:var(--bp-accent);">CHECKED IN: <span id="led-st-checked">0</span> / 377</span>
+    </div>
+
     <div class="top-actions">
-      <a href="admin.html" class="btn" style="text-decoration:none;display:inline-flex;align-items:center;gap:5px;border-color:rgba(0,240,255,0.45);color:#00f0ff;font-weight:700;" title="Return to Blueprint Executive Dashboard">
+      <button id="btn-led-mode" class="btn" onclick="toggleLedDisplayMode()" style="border-color:rgba(16,185,129,0.75);background:rgba(16,185,129,0.22);color:#34d399;font-weight:800;font-size:13px;" title="Toggle Full-Screen Giant LED Check-In Display">📺 BIG DISPLAY</button>
+      <a href="admin.html" class="btn hide-in-led" style="text-decoration:none;display:inline-flex;align-items:center;gap:5px;border-color:rgba(0,240,255,0.45);color:#00f0ff;font-weight:700;" title="Return to Blueprint Executive Dashboard">
         <span>⚡ DASHBOARD</span>
       </a>
-      <a href="gift.html" class="btn" style="text-decoration:none;display:inline-flex;align-items:center;gap:5px;border-color:rgba(245,158,11,0.55);color:#f59e0b;font-weight:700;" title="Open Gift Distribution Terminal">
+      <a href="gift.html" class="btn hide-in-led" style="text-decoration:none;display:inline-flex;align-items:center;gap:5px;border-color:rgba(245,158,11,0.55);color:#f59e0b;font-weight:700;" title="Open Gift Distribution Terminal">
         <span>🎁 GIFTS</span>
       </a>
-      <a href="lottery.html" class="btn" style="text-decoration:none;display:inline-flex;align-items:center;gap:5px;border-color:rgba(217,119,6,0.65);color:#fbbf24;font-weight:700;" title="Open Grand Lottery / Raffle Draw Stage">
+      <a href="lottery.html" class="btn hide-in-led" style="text-decoration:none;display:inline-flex;align-items:center;gap:5px;border-color:rgba(217,119,6,0.65);color:#fbbf24;font-weight:700;" title="Open Grand Lottery / Raffle Draw Stage">
         <span>🏆 RAFFLE</span>
       </a>
-      <a href="index.html" class="btn" style="text-decoration:none;font-weight:600;" title="Public Website">
+      <a href="index.html" class="btn hide-in-led" style="text-decoration:none;font-weight:600;" title="Public Website">
         <span>SITE</span>
       </a>
-      <span id="bp-session-pill" class="pill-status" style="border-color:rgba(16,185,129,0.5);color:#10b981;font-weight:700;">● AUTHENTICATED</span>
-      <div class="theme-pills" title="Switch Studio Theme">
+      <span id="bp-session-pill" class="pill-status hide-in-led" style="border-color:rgba(16,185,129,0.5);color:#10b981;font-weight:700;">● AUTHENTICATED</span>
+      <div class="theme-pills hide-in-led" title="Switch Studio Theme">
         <button class="theme-dot active" id="th-cyan" style="background:#00f0ff;color:#030712;" onclick="setTheme('cyan')" title="Blueprint Cyan">C</button>
         <button class="theme-dot" id="th-gold" style="background:#f59e0b;color:#07060b;" onclick="setTheme('gold')" title="Royal Gold">G</button>
         <button class="theme-dot" id="th-crimson" style="background:#fb7185;color:#09040b;" onclick="setTheme('crimson')" title="Crimson">R</button>
         <button class="theme-dot" id="th-light" style="background:#eef5fc;color:#0284c7;" onclick="setTheme('light')" title="Daylight">L</button>
       </div>
-      <input id="gate-name-input" class="gate-input" type="text" value="Main Gate" title="Gate / Device Name" placeholder="Gate Name" />
-      <button id="btn-connect-mobile" class="btn" style="display:none;" onclick="openMobileModal()">📱 Mobile Sync</button>
-      <button class="btn btn-primary" onclick="exportReport('csv')">⬇ CSV</button>
-      <button id="btn-export-xlsx" class="btn btn-primary" style="display:none;" onclick="exportReport('xlsx')">⬇ Excel</button>
-      <button class="btn" onclick="toggleFullscreen()">⛶</button>
+      <input id="gate-name-input" class="gate-input hide-in-led" type="text" value="Main Gate" title="Gate / Device Name" placeholder="Gate Name" />
+      <button id="btn-connect-mobile" class="btn hide-in-led" style="display:none;" onclick="openMobileModal()">📱 Mobile Sync</button>
+      <button class="btn btn-primary hide-in-led" onclick="exportReport('csv')">⬇ CSV</button>
+      <button id="btn-export-xlsx" class="btn btn-primary hide-in-led" style="display:none;" onclick="exportReport('xlsx')">⬇ Excel</button>
+      <button class="btn" onclick="toggleFullscreen()" title="Browser Fullscreen">⛶</button>
     </div>
   </header>
 
@@ -1047,14 +1169,8 @@
     </div>
 
     <div class="main-grid">
-      <!-- Left: Scanner & Result Hero -->
-      <section class="bp-card bp-ticks panel">
-        <div class="mode-switch">
-          <button class="mode-btn active-auto" id="m-auto" onclick="setGateMode('auto')">AUTO<br><small>Entry ↔ Exit</small></button>
-          <button class="mode-btn" id="m-entry" onclick="setGateMode('entry')">ENTRY<br><small>Check-In Only</small></button>
-          <button class="mode-btn" id="m-exit" onclick="setGateMode('exit')">EXIT<br><small>Check-Out Only</small></button>
-        </div>
-
+      <!-- Left: Scanner & BIG Result Hero -->
+      <section class="bp-card bp-ticks panel left-panel-col">
         <div class="scan-box-wrap">
           <div class="scan-indicator">
             <span><span class="scan-dot"></span>SCANNER_READY // PULL WNL-S011-USB TRIGGER</span>
@@ -1075,14 +1191,7 @@
           </div>
         </div>
 
-        <div class="scanner-toggles">
-          <button id="tog-kbd" class="chip-toggle" onclick="toggleMobileKeyboard()">⌨ Phone Keyboard: OFF (OTG)</button>
-          <button id="tog-sound" class="chip-toggle on" onclick="toggleSound()">🔊 Sound: ON</button>
-          <button id="tog-cooldown" class="chip-toggle on" onclick="toggleCooldown()">🛡 5s Guard: ON</button>
-          <button id="tog-cam" class="chip-toggle" onclick="openCameraModal()">📷 Camera Scan</button>
-        </div>
-
-        <!-- Latest Scan Result -->
+        <!-- Latest Scan Result (HERO SPOTLIGHT) -->
         <div class="result-card" id="result-card">
           <div class="bp-scanline"></div>
           <div class="result-banner banner-idle" id="res-banner">
@@ -1091,7 +1200,7 @@
           </div>
           <div class="result-body">
             <img id="res-photo" class="result-photo" alt="Photo" src="" style="display:none;" />
-            <div id="res-photo-placeholder" class="result-photo font-mono-cad" style="display:grid;place-items:center;color:var(--bp-accent);font-weight:700;font-size:12px;text-align:center;">
+            <div id="res-photo-placeholder" class="result-photo font-mono-cad" style="display:grid;place-items:center;color:var(--bp-accent);font-weight:800;font-size:18px;text-align:center;">
               SCAN<br>ID CARD
             </div>
             <div class="result-info">
@@ -1110,6 +1219,19 @@
           <div class="result-actions" id="res-actions" style="display:none;"></div>
         </div>
 
+        <div class="mode-switch">
+          <button class="mode-btn active-auto" id="m-auto" onclick="setGateMode('auto')">AUTO<br><small>Entry ↔ Exit</small></button>
+          <button class="mode-btn" id="m-entry" onclick="setGateMode('entry')">ENTRY<br><small>Check-In Only</small></button>
+          <button class="mode-btn" id="m-exit" onclick="setGateMode('exit')">EXIT<br><small>Check-Out Only</small></button>
+        </div>
+
+        <div class="scanner-toggles">
+          <button id="tog-kbd" class="chip-toggle" onclick="toggleMobileKeyboard()">⌨ Phone Keyboard: OFF (OTG)</button>
+          <button id="tog-sound" class="chip-toggle on" onclick="toggleSound()">🔊 Sound: ON</button>
+          <button id="tog-cooldown" class="chip-toggle on" onclick="toggleCooldown()">🛡 5s Guard: ON</button>
+          <button id="tog-cam" class="chip-toggle" onclick="openCameraModal()">📷 Camera Scan</button>
+        </div>
+
         <!-- Family Group Status -->
         <div class="family-box" id="family-box" style="display:none;">
           <div class="family-title" id="family-title">Family Group Status</div>
@@ -1118,7 +1240,7 @@
       </section>
 
       <!-- Right: Live Feed & Full Directory -->
-      <section class="bp-card bp-ticks panel">
+      <section class="bp-card bp-ticks panel right-panel-col">
         <div class="tabs">
           <div class="tab-btns">
             <button class="tab-btn active" id="tab-logs-btn" onclick="switchTab('logs')">📋 LIVE LOG (<span id="log-count">0</span>)</button>
@@ -6560,7 +6682,7 @@
         closeAlertModal();
         playTone("entry"); triggerFlash("flash-entry");
         banner.className = "result-banner banner-entry";
-        banner.firstElementChild.textContent = "✅ ENTRY GRANTED";
+        banner.firstElementChild.textContent = "✅ WELCOME! // ENTRY GRANTED";
       } else if (res.outcome === "EXIT") {
         closeAlertModal();
         playTone("exit"); triggerFlash("flash-exit");
@@ -6808,6 +6930,27 @@
       if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
       else document.exitFullscreen().catch(() => {});
     }
+    function applyLedDisplayMode(isLed) {
+      document.body.classList.toggle("led-display-mode", isLed);
+      const btn = document.getElementById("btn-led-mode");
+      if (btn) {
+        btn.textContent = isLed ? "✕ EXIT BIG DISPLAY" : "📺 BIG DISPLAY";
+        btn.style.background = isLed ? "rgba(239,68,68,0.22)" : "rgba(16,185,129,0.22)";
+        btn.style.borderColor = isLed ? "rgba(239,68,68,0.75)" : "rgba(16,185,129,0.75)";
+        btn.style.color = isLed ? "#fca5a5" : "#34d399";
+      }
+      localStorage.setItem("bsaa_led_display_mode", isLed ? "1" : "0");
+    }
+    function toggleLedDisplayMode() {
+      const next = !document.body.classList.contains("led-display-mode");
+      applyLedDisplayMode(next);
+      if (next && !document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      }
+    }
+    if (localStorage.getItem("bsaa_led_display_mode") === "1") {
+      applyLedDisplayMode(true);
+    }
 
     function switchTab(tab) {
       document.getElementById("tab-logs").style.display = tab === "logs" ? "block" : "none";
@@ -6838,6 +6981,10 @@
       }
       document.getElementById("st-inside").textContent = inside;
       document.getElementById("st-checked").textContent = checkedIn;
+      const ledIn = document.getElementById("led-st-inside");
+      const ledCh = document.getElementById("led-st-checked");
+      if (ledIn) ledIn.textContent = inside;
+      if (ledCh) ledCh.textContent = checkedIn;
       document.getElementById("st-exited").textContent = exited;
       document.getElementById("st-outside").textContent = outside;
       const pct = attendees.length ? Math.round((checkedIn / attendees.length) * 100) : 0;
