@@ -1204,8 +1204,10 @@ class BlueprintHandler(SimpleHTTPRequestHandler):
 
         # BSAA Gate Server Info & Connection QR
         if req_path == "api/info":
+            import ssl as _ssl
             host = self.headers.get("Host", "blueprinteventmanagement.shop")
-            proto = "https" if not (host.startswith("localhost") or host.startswith("127.0.0.1")) else "http"
+            is_tls = isinstance(getattr(self, "connection", None), _ssl.SSLSocket)
+            proto = "https" if (is_tls or not (host.startswith("localhost") or host.startswith("127.0.0.1") or host.startswith("192.168.") or host.startswith("10."))) else "http"
             primary_url = f"{proto}://{host}/bsaaevent"
             qr_svg = ""
             if HAS_QRCODE:
@@ -1265,8 +1267,10 @@ class BlueprintHandler(SimpleHTTPRequestHandler):
 
         # BSAA Gift Terminal Info & QR
         if req_path == "api/gift/info":
+            import ssl as _ssl
             host = self.headers.get("Host", "blueprinteventmanagement.shop")
-            proto = "https" if not (host.startswith("localhost") or host.startswith("127.0.0.1")) else "http"
+            is_tls = isinstance(getattr(self, "connection", None), _ssl.SSLSocket)
+            proto = "https" if (is_tls or not (host.startswith("localhost") or host.startswith("127.0.0.1") or host.startswith("192.168.") or host.startswith("10."))) else "http"
             primary_url = f"{proto}://{host}/gift"
             qr_svg = ""
             if HAS_QRCODE:
@@ -1848,14 +1852,85 @@ class BlueprintHandler(SimpleHTTPRequestHandler):
         return self.send_json({"success": False, "error": "Not Found"}, 404)
 
 
+def ensure_local_tls_cert():
+    cert_path = os.path.join(DATA_DIR, "local_cert.pem")
+    key_path = os.path.join(DATA_DIR, "local_key.pem")
+    if os.path.exists(cert_path) and os.path.exists(key_path):
+        return cert_path, key_path
+    try:
+        import ipaddress
+        from datetime import timedelta, timezone
+        from cryptography import x509
+        from cryptography.x509.oid import NameOID
+        from cryptography.hazmat.primitives import hashes, serialization
+        from cryptography.hazmat.primitives.asymmetric import rsa
+
+        key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+        subject = issuer = x509.Name([
+            x509.NameAttribute(NameOID.COMMON_NAME, "192.168.1.37"),
+            x509.NameAttribute(NameOID.ORGANIZATION_NAME, "The Blueprint Event Management"),
+        ])
+        san_list = [
+            x509.DNSName("localhost"),
+            x509.IPAddress(ipaddress.ip_address("127.0.0.1")),
+            x509.IPAddress(ipaddress.ip_address("192.168.1.37")),
+        ]
+        try:
+            s_ip = socket.gethostbyname(socket.gethostname())
+            if s_ip and s_ip not in ("127.0.0.1", "192.168.1.37"):
+                san_list.append(x509.IPAddress(ipaddress.ip_address(s_ip)))
+        except Exception:
+            pass
+        now_utc = datetime.now(timezone.utc)
+        cert = (
+            x509.CertificateBuilder()
+            .subject_name(subject)
+            .issuer_name(issuer)
+            .public_key(key.public_key())
+            .serial_number(x509.random_serial_number())
+            .not_valid_before(now_utc - timedelta(days=1))
+            .not_valid_after(now_utc + timedelta(days=3650))
+            .add_extension(x509.SubjectAlternativeName(san_list), critical=False)
+            .sign(key, hashes.SHA256())
+        )
+        os.makedirs(DATA_DIR, exist_ok=True)
+        with open(key_path, "wb") as kf:
+            kf.write(key.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.TraditionalOpenSSL, serialization.NoEncryption()))
+        with open(cert_path, "wb") as cf:
+            cf.write(cert.public_bytes(serialization.Encoding.PEM))
+        return cert_path, key_path
+    except Exception as e:
+        print("TLS cert generation skipped:", e)
+        return None, None
+
+
 def run():
     host = os.environ.get("HOST", "0.0.0.0")
     server_address = (host, PORT)
     httpd = ServerClass(server_address, BlueprintHandler)
+
+    https_port = int(os.environ.get("HTTPS_PORT", 8443))
+    httpsd = None
+    if os.name == "nt" or os.environ.get("ENABLE_LOCAL_HTTPS") == "1":
+        cert_path, key_path = ensure_local_tls_cert()
+        if cert_path and key_path:
+            try:
+                import ssl
+                httpsd = ServerClass((host, https_port), BlueprintHandler)
+                ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+                ctx.load_cert_chain(certfile=cert_path, keyfile=key_path)
+                httpsd.socket = ctx.wrap_socket(httpsd.socket, server_side=True)
+                threading.Thread(target=httpsd.serve_forever, daemon=True).start()
+            except Exception as e:
+                print("HTTPS listener error:", e)
+                httpsd = None
+
     print(f"================================================================")
     print(f"  THE BLUEPRINT EVENT MANAGEMENT // PRODUCTION SERVER & DB")
     print(f"  SQLite Database: {DB_PATH}")
-    print(f"  Listening on:  http://{host}:{PORT}/")
+    print(f"  HTTP Listening:  http://{host}:{PORT}/")
+    if httpsd:
+        print(f"  HTTPS Listening: https://{host}:{https_port}/")
     print(f"  Login Gateway: http://{host}:{PORT}/login")
     print(f"  Executive HQ:  http://{host}:{PORT}/admin")
     print(f"  Gate Scanner:  http://{host}:{PORT}/bsaaevent")
@@ -1868,6 +1943,8 @@ def run():
     except KeyboardInterrupt:
         print("\nShutting down server.")
         httpd.server_close()
+        if httpsd:
+            httpsd.server_close()
 
 if __name__ == "__main__":
     run()
