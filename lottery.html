@@ -6032,13 +6032,13 @@
 
       function getPhotoSrc(person) {
         if (!person) return null;
-        if (navigator.onLine && person.photo) return `/static/photos/${person.photo}?v=4`;
         if (typeof EMBEDDED_PHOTOS !== 'undefined' && EMBEDDED_PHOTOS[person.serial]) {
           return EMBEDDED_PHOTOS[person.serial];
         }
-        if (person.photo) return `/static/photos/${person.photo}?v=4`;
+        if (person.photo) return `/static/photos/${person.photo}?v=5`;
         return null;
       }
+      let currentLotteryPhotoToken = 0;
 
       // Toast notification
       function toast(msg, type = 'success') {
@@ -6361,9 +6361,27 @@
         winnerDesignationEl.textContent = person.designation ? `💼 ${person.designation}` : '';
         winnerPhoneEl.textContent = person.phone ? `📞 ${person.phone}` : '';
 
-        const photoSrc = getPhotoSrc(person);
-        if (photoSrc) {
-          winnerPhotoEl.src = photoSrc;
+        const lToken = ++currentLotteryPhotoToken;
+        const fastPhoto = (typeof EMBEDDED_PHOTOS !== 'undefined' && EMBEDDED_PHOTOS[person.serial]) ? EMBEDDED_PHOTOS[person.serial] : null;
+        const hdPhoto = (navigator.onLine && person.photo) ? `/static/photos/${person.photo}?v=5` : null;
+        if (fastPhoto) {
+          winnerPhotoEl.onerror = null;
+          winnerPhotoEl.src = fastPhoto;
+          winnerPhotoEl.style.display = 'block';
+          winnerPhotoPlaceholder.style.display = 'none';
+          if (hdPhoto) {
+            const preload = new Image();
+            preload.onload = () => { if (lToken === currentLotteryPhotoToken) winnerPhotoEl.src = hdPhoto; };
+            preload.src = hdPhoto;
+          }
+        } else if (hdPhoto) {
+          winnerPhotoEl.onerror = () => {
+            winnerPhotoEl.onerror = null;
+            winnerPhotoEl.style.display = 'none';
+            winnerPhotoPlaceholder.style.display = 'flex';
+            winnerPhotoPlaceholder.textContent = person.name.charAt(0) || '👤';
+          };
+          winnerPhotoEl.src = hdPhoto;
           winnerPhotoEl.style.display = 'block';
           winnerPhotoPlaceholder.style.display = 'none';
         } else {

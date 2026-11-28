@@ -5161,7 +5161,10 @@
     EMBEDDED_ATTENDEES.forEach(a => { bySerial[a.serial.toUpperCase()] = a; });
 
     let lastLogId = null;
-    let stateVersion = -1;
+    let lastShownSig = '';
+    let lastShownTime = 0;
+    let stateVersion = 0;
+    let currentPhotoToken = 0;
 
     function toggleFs() {
       if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
@@ -5179,6 +5182,14 @@
       const p = bySerial[(log.serial || '').toUpperCase()];
       if (!p) return;
 
+      const sig = `${p.serial}|${log.action || 'ENTRY'}`;
+      const now = Date.now();
+      if (sig === lastShownSig && (now - lastShownTime) < 4000) {
+        return;
+      }
+      lastShownSig = sig;
+      lastShownTime = now;
+
       const card = document.getElementById('stage-card');
       const banner = document.getElementById('stage-banner');
       const bText = document.getElementById('stage-banner-text');
@@ -5193,20 +5204,32 @@
       } else {
         banner.className = 'stage-banner entry';
         bText.textContent = 'WELCOME! // ENTRY GRANTED';
-        card.style.borderColor = '#00e676';
-        img.style.borderColor = '#00e676';
+        card.style.borderColor = '#00ff88';
+        img.style.borderColor = '#00ff88';
       }
 
-      const hdUrl = (navigator.onLine && p.photo) ? `/static/photos/${p.photo}?v=4` : null;
-      const fallback = (typeof EMBEDDED_PHOTOS !== 'undefined' && EMBEDDED_PHOTOS[p.serial]) ? EMBEDDED_PHOTOS[p.serial] : null;
-      const src = hdUrl || fallback;
-      if (src) {
+      const token = ++currentPhotoToken;
+      const fastSrc = (typeof EMBEDDED_PHOTOS !== 'undefined' && EMBEDDED_PHOTOS[p.serial]) ? EMBEDDED_PHOTOS[p.serial] : null;
+      const hdUrl = (navigator.onLine && p.photo) ? `/static/photos/${p.photo}?v=5` : null;
+
+      if (fastSrc) {
+        img.onerror = null;
+        img.src = fastSrc;
+        img.style.display = 'block';
+        ph.style.display = 'none';
+        if (hdUrl) {
+          const preload = new Image();
+          preload.onload = () => {
+            if (token === currentPhotoToken) img.src = hdUrl;
+          };
+          preload.src = hdUrl;
+        }
+      } else if (hdUrl) {
         img.onerror = () => {
           img.onerror = null;
-          if (fallback && img.src !== fallback) img.src = fallback;
-          else { img.style.display = 'none'; ph.style.display = 'grid'; }
+          img.style.display = 'none'; ph.style.display = 'grid';
         };
-        img.src = src;
+        img.src = hdUrl;
         img.style.display = 'block';
         ph.style.display = 'none';
       } else {
@@ -5242,6 +5265,19 @@
       }
     }
 
+    if (typeof BroadcastChannel !== 'undefined') {
+      const liveBus = new BroadcastChannel('bsaa_live_bus');
+      liveBus.onmessage = (ev) => {
+        if (ev.data && ev.data.type === 'SCAN' && ev.data.log) {
+          lastLogId = ev.data.log.id;
+          showAttendee(ev.data.log);
+          if (typeof ev.data.total_checked === 'number') {
+            document.getElementById('led-count').textContent = ev.data.total_checked;
+          }
+        }
+      };
+    }
+
     async function poll() {
       try {
         const res = await fetch(`/api/state?since_version=${stateVersion}`);
@@ -5251,7 +5287,6 @@
         stateVersion = data.version || stateVersion;
         processLogs(data.logs || [], data.status_map || {});
       } catch (_) {
-        // Local storage fallback if offline on same machine
         try {
           const l = JSON.parse(localStorage.getItem('bsaa_gate_logs_v1') || '[]');
           if (l.length) processLogs(l, null);
@@ -5268,7 +5303,7 @@
       }
     });
 
-    setInterval(poll, 750);
+    setInterval(poll, 450);
     poll();
   </script>
 </body>

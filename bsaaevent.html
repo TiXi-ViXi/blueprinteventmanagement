@@ -6647,6 +6647,8 @@
       return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
     }
 
+    const liveBus = (typeof BroadcastChannel !== "undefined") ? new BroadcastChannel("bsaa_live_bus") : null;
+
     async function processScan(rawCode, overrideAction = null, isManual = false) {
       const trimmed = String(rawCode || "").trim();
       if (!trimmed) return;
@@ -6660,36 +6662,12 @@
         manual: isManual
       };
 
-      let usedOfflineFallback = false;
-      if (APP_MODE === "server") {
-        if (navigator.onLine) {
-          try {
-            const res = await fetch("/api/scan", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(scanPayload)
-            });
-            const data = await res.json();
-            if (data.status_map) statusMap = data.status_map;
-            if (data.logs) { scanLogs = data.logs; saveLocalLogs(); }
-            if (data.version) stateVersion = data.version;
-            handleScanResultUI(data);
-            renderAll();
-            updateModePill(true);
-            return;
-          } catch (err) {
-            usedOfflineFallback = true;
-          }
-        } else {
-          usedOfflineFallback = true;
-        }
-      }
-
       const person = resolveAttendee(trimmed);
       if (!person) {
         handleScanResultUI({ ok: false, outcome: "INVALID", raw_code: trimmed, message: "Barcode not found in BSAA database" });
         return;
       }
+
       const st = statusMap[person.serial] || { status: "outside", last_entry: null, last_exit: null, scan_count: 0 };
       const nowMs = Date.now();
       if (!overrideAction && cooldownSec > 0 && recentLocalScans[person.serial]) {
@@ -6718,40 +6696,84 @@
         }
       }
 
+      // 0ms Instant Optimistic Local Update + LED Broadcast!
       recentLocalScans[person.serial] = nowMs;
-      const newLog = { id: Date.now() + Math.floor(Math.random() * 1000), serial: person.serial, action, timestamp: formatIsoLocal(), gate: gateName, manual: isManual };
+      const tempId = Date.now() + Math.floor(Math.random() * 1000);
+      const isoNow = formatIsoLocal();
+      const newLog = { id: tempId, serial: person.serial, action, timestamp: isoNow, gate: gateName, manual: isManual };
       scanLogs.unshift(newLog);
       saveLocalLogs();
       recomputeStandaloneState();
-      if (usedOfflineFallback) {
+      handleScanResultUI({ ok: true, outcome: action, log_id: tempId, attendee: person, attendee_state: statusMap[person.serial], message: action === "ENTRY" ? "ENTRY GRANTED" : "EXIT RECORDED" });
+      renderAll();
+      if (liveBus) liveBus.postMessage({ type: "SCAN", log: newLog, total_checked: Object.values(statusMap).filter(s => s.last_entry || s.status === "inside" || s.status === "exited").length });
+
+      if (APP_MODE === "server") {
+        if (navigator.onLine) {
+          try {
+            const res = await fetch("/api/scan", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(scanPayload)
+            });
+            const data = await res.json();
+            if (data.status_map) statusMap = data.status_map;
+            if (data.logs) { scanLogs = data.logs; saveLocalLogs(); }
+            if (data.version) stateVersion = data.version;
+            updateModePill(true);
+            renderAll();
+            // If server flagged a conflict (like ALREADY_INSIDE from another gate), update UI cleanly without re-beeping valid scans
+            if (!data.ok) {
+              handleScanResultUI(data);
+            } else if (data.outcome !== action) {
+              handleScanResultUI(data);
+            }
+            return;
+          } catch (err) {
+            // Network drop during scan -> queue cleanly for sync
+          }
+        }
         const q = getOfflineQueue();
         q.push({ ...scanPayload, mode: action === "ENTRY" ? "entry_force" : "exit_force", cooldown_sec: 0 });
         saveOfflineQueue(q);
         updateModePill(false);
       }
-      handleScanResultUI({ ok: true, outcome: action, log_id: newLog.id, attendee: person, attendee_state: statusMap[person.serial], message: (action === "ENTRY" ? "ENTRY GRANTED" : "EXIT RECORDED") + (usedOfflineFallback ? " (OFFLINE QUEUED)" : "") });
-      renderAll();
     }
 
     function getPhotoSrc(person) {
       if (!person) return null;
-      if (navigator.onLine && person.photo) return `/static/photos/${person.photo}?v=4`;
       if (typeof EMBEDDED_PHOTOS !== "undefined" && EMBEDDED_PHOTOS[person.serial]) {
         return EMBEDDED_PHOTOS[person.serial];
       }
-      if (person.photo) return `/static/photos/${person.photo}?v=4`;
+      if (person.photo) return `/static/photos/${person.photo}?v=5`;
       return null;
     }
+    let currentPhotoToken = 0;
     function applyPhotoImg(imgEl, phEl, person, emptyHtml = "NO<br>PHOTO") {
-      const pSrc = getPhotoSrc(person);
-      const fallback = (typeof EMBEDDED_PHOTOS !== "undefined" && person && EMBEDDED_PHOTOS[person.serial]) ? EMBEDDED_PHOTOS[person.serial] : null;
-      if (pSrc) {
+      const token = ++currentPhotoToken;
+      const fastSrc = (typeof EMBEDDED_PHOTOS !== "undefined" && person && EMBEDDED_PHOTOS[person.serial]) ? EMBEDDED_PHOTOS[person.serial] : null;
+      const hdUrl = (navigator.onLine && person && person.photo) ? `/static/photos/${person.photo}?v=5` : null;
+      if (fastSrc) {
+        imgEl.onerror = null;
+        imgEl.src = fastSrc;
+        imgEl.style.display = "block";
+        if (phEl) phEl.style.display = "none";
+        if (hdUrl) {
+          const preload = new Image();
+          preload.onload = () => {
+            if (token === currentPhotoToken) {
+              imgEl.src = hdUrl;
+            }
+          };
+          preload.src = hdUrl;
+        }
+      } else if (hdUrl) {
         imgEl.onerror = () => {
           imgEl.onerror = null;
-          if (fallback && imgEl.src !== fallback) { imgEl.src = fallback; }
-          else { imgEl.style.display = "none"; if (phEl) { phEl.style.display = "grid"; phEl.innerHTML = emptyHtml; } }
+          imgEl.style.display = "none";
+          if (phEl) { phEl.style.display = "grid"; phEl.innerHTML = emptyHtml; }
         };
-        imgEl.src = pSrc;
+        imgEl.src = hdUrl;
         imgEl.style.display = "block";
         if (phEl) phEl.style.display = "none";
       } else {
@@ -7074,6 +7096,8 @@
       document.getElementById("tab-dir").style.display = tab === "dir" ? "block" : "none";
       document.getElementById("tab-logs-btn").classList.toggle("active", tab === "logs");
       document.getElementById("tab-dir-btn").classList.toggle("active", tab === "dir");
+      if (tab === "dir") renderDirectory();
+      else renderLogs();
     }
 
     function renderAll() { renderStats(); renderLogs(); renderDirectory(); }
@@ -7113,10 +7137,11 @@
     }
 
     function renderLogs() {
+      const tabLogsEl = document.getElementById("tab-logs");
+      if (tabLogsEl && tabLogsEl.style.display === "none") return;
       const q = (document.getElementById("log-search").value || "").trim().toLowerCase();
       const actFilter = document.getElementById("log-action-filter").value;
       const tbody = document.getElementById("logs-tbody");
-      tbody.innerHTML = "";
 
       const filtered = scanLogs.filter(l => {
         if (actFilter !== "all" && l.action !== actFilter) return false;
@@ -7131,29 +7156,30 @@
         return;
       }
 
+      const rowsHtml = [];
       for (const l of show) {
         const p = attendeeBySerial[l.serial.toUpperCase()] || { name: l.serial, role: "", company: "" };
-        const tr = document.createElement("tr");
         const timeShort = (l.timestamp || "").split(" ")[1] || l.timestamp;
         const pillCls = l.action === "ENTRY" ? "st-inside" : "st-exited";
-        tr.innerHTML = `
-          <td class="font-mono-cad" style="white-space:nowrap;font-size:12px;">${escapeHtml(timeShort)}</td>
-          <td><div style="font-weight:700;color:var(--bp-text);">${escapeHtml(p.name)}</div><div style="font-size:11px;color:var(--bp-muted);">${escapeHtml(p.role)} • ${escapeHtml(p.company)}</div></td>
+        rowsHtml.push(`<tr>
+          <td class="font-mono-cad" style="white-space:nowrap;font-size:13px;">${escapeHtml(timeShort)}</td>
+          <td><div style="font-weight:700;color:var(--bp-text);">${escapeHtml(p.name)}</div><div style="font-size:12px;color:var(--bp-muted);">${escapeHtml(p.role)} • ${escapeHtml(p.company)}</div></td>
           <td class="font-mono-cad" style="white-space:nowrap;font-weight:700;color:var(--bp-accent);">${escapeHtml(l.serial)}</td>
           <td><span class="status-pill ${pillCls}">${l.action}</span></td>
-          <td class="font-mono-cad" style="font-size:11px;color:var(--bp-muted);">${escapeHtml(l.gate || "")}${l.manual ? " (Manual)" : ""}</td>
-          <td><button class="btn btn-danger" style="padding:4px 8px;font-size:10px;" onclick="undoLog(${l.id})">Undo</button></td>
-        `;
-        tbody.appendChild(tr);
+          <td class="font-mono-cad" style="font-size:12px;color:var(--bp-muted);">${escapeHtml(l.gate || "")}${l.manual ? " (Manual)" : ""}</td>
+          <td><button class="btn btn-danger" style="padding:4px 8px;font-size:11px;" onclick="undoLog(${l.id})">Undo</button></td>
+        </tr>`);
       }
+      tbody.innerHTML = rowsHtml.join("");
     }
 
     function renderDirectory() {
+      const tabDirEl = document.getElementById("tab-dir");
+      if (tabDirEl && tabDirEl.style.display === "none") return;
       const q = (document.getElementById("dir-search").value || "").trim().toLowerCase();
       const stFilter = document.getElementById("dir-status-filter").value;
       const roleFilter = document.getElementById("dir-role-filter").value;
       const tbody = document.getElementById("dir-tbody");
-      tbody.innerHTML = "";
 
       const filtered = attendees.filter(a => {
         const st = (statusMap[a.serial] || { status: "outside" }).status;
@@ -7163,6 +7189,7 @@
         return `${a.serial} ${a.name} ${a.company} ${a.phone} ${a.designation}`.toLowerCase().includes(q);
       });
 
+      const rowsHtml = [];
       for (const a of filtered.slice(0, 200)) {
         const stObj = statusMap[a.serial] || { status: "outside", last_entry: null, last_exit: null };
         const st = stObj.status;
@@ -7173,24 +7200,21 @@
           ? `<img class="mini-avatar" src="${pSrc}" loading="lazy" alt="" />`
           : `<div class="mini-avatar font-mono-cad" style="display:inline-grid;place-items:center;font-size:9px;color:var(--bp-muted);">NO</div>`;
 
-        const tr = document.createElement("tr");
         const nextAction = st === "inside" ? "EXIT" : "ENTRY";
         const btnText = st === "inside" ? "Check Out" : "Check In";
-        tr.innerHTML = `
+        rowsHtml.push(`<tr>
           <td>${photoHtml}</td>
-          <td><div style="font-weight:700;color:var(--bp-text);">${escapeHtml(a.name)}</div><div style="font-size:11px;color:var(--bp-muted);">${escapeHtml(a.designation || a.role)} • ${escapeHtml(a.company)}</div></td>
+          <td><div style="font-weight:700;color:var(--bp-text);">${escapeHtml(a.name)}</div><div style="font-size:12px;color:var(--bp-muted);">${escapeHtml(a.designation || a.role)} • ${escapeHtml(a.company)}</div></td>
           <td class="font-mono-cad" style="white-space:nowrap;font-weight:700;color:var(--bp-accent);">${escapeHtml(a.serial)}</td>
           <td><span class="status-pill ${pillCls}">${label}</span></td>
-          <td class="font-mono-cad" style="font-size:11px;color:var(--bp-text-soft);white-space:nowrap;">In: ${stObj.last_entry ? stObj.last_entry.split(" ")[1] : "—"}<br>Out: ${stObj.last_exit ? stObj.last_exit.split(" ")[1] : "—"}</td>
-          <td><button class="btn" style="padding:5px 9px;font-size:10px;" onclick="processScan('${a.serial}', '${nextAction}', true)">${btnText}</button></td>
-        `;
-        tbody.appendChild(tr);
+          <td class="font-mono-cad" style="font-size:12px;color:var(--bp-text-soft);white-space:nowrap;">In: ${stObj.last_entry ? stObj.last_entry.split(" ")[1] : "—"}<br>Out: ${stObj.last_exit ? stObj.last_exit.split(" ")[1] : "—"}</td>
+          <td><button class="btn" style="padding:5px 9px;font-size:11px;" onclick="processScan('${a.serial}', '${nextAction}', true)">${btnText}</button></td>
+        </tr>`);
       }
       if (filtered.length > 200) {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td colspan="6" class="font-mono-cad" style="text-align:center;color:var(--bp-muted);font-size:11px;">Showing first 200 of ${filtered.length} matches — narrow search above to see more.</td>`;
-        tbody.appendChild(tr);
+        rowsHtml.push(`<tr><td colspan="6" class="font-mono-cad" style="text-align:center;color:var(--bp-muted);font-size:11px;">Showing first 200 of ${filtered.length} matches — narrow search above to see more.</td></tr>`);
       }
+      tbody.innerHTML = rowsHtml.join("");
     }
 
     async function undoLog(logId) {

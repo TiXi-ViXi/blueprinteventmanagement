@@ -6032,6 +6032,8 @@
       document.getElementById("tab-logs").style.display = t === "logs" ? "block" : "none";
       document.getElementById("tab-dir").style.display = t === "dir" ? "block" : "none";
       document.getElementById("tab-" + t + "-btn").classList.add("active");
+      if (t === "dir") renderDirectory();
+      else renderLogs();
     }
 
     // Audio synthesizer
@@ -6099,12 +6101,40 @@
 
     function getPhotoSrc(person) {
       if (!person) return null;
-      if (navigator.onLine && person.photo) return `/static/photos/${person.photo}?v=4`;
       if (typeof EMBEDDED_PHOTOS !== "undefined" && EMBEDDED_PHOTOS[person.serial]) {
         return EMBEDDED_PHOTOS[person.serial];
       }
-      if (person.photo) return `/static/photos/${person.photo}?v=4`;
+      if (person.photo) return `/static/photos/${person.photo}?v=5`;
       return null;
+    }
+    let currentGiftPhotoToken = 0;
+    function applyGiftPhoto(imgEl, phEl, person, emptyHtml) {
+      const token = ++currentGiftPhotoToken;
+      const fastSrc = (typeof EMBEDDED_PHOTOS !== "undefined" && person && EMBEDDED_PHOTOS[person.serial]) ? EMBEDDED_PHOTOS[person.serial] : null;
+      const hdUrl = (navigator.onLine && person && person.photo) ? `/static/photos/${person.photo}?v=5` : null;
+      if (fastSrc) {
+        imgEl.onerror = null;
+        imgEl.src = fastSrc;
+        imgEl.style.display = "block";
+        if (phEl) phEl.style.display = "none";
+        if (hdUrl) {
+          const preload = new Image();
+          preload.onload = () => { if (token === currentGiftPhotoToken) imgEl.src = hdUrl; };
+          preload.src = hdUrl;
+        }
+      } else if (hdUrl) {
+        imgEl.onerror = () => {
+          imgEl.onerror = null;
+          imgEl.style.display = "none";
+          if (phEl) { phEl.style.display = "grid"; phEl.innerHTML = emptyHtml; }
+        };
+        imgEl.src = hdUrl;
+        imgEl.style.display = "block";
+        if (phEl) phEl.style.display = "none";
+      } else {
+        imgEl.style.display = "none";
+        if (phEl) { phEl.style.display = "grid"; phEl.innerHTML = emptyHtml; }
+      }
     }
 
     function escapeHtml(str) {
@@ -6434,9 +6464,7 @@
         banner.firstElementChild.textContent = "⚠️ INELIGIBLE: " + (res.attendee.role || "Family Member").toUpperCase();
 
         const p = res.attendee;
-        const pSrc = getPhotoSrc(p);
-        if (pSrc) { photoImg.src = pSrc; photoImg.style.display = "block"; photoPh.style.display = "none"; }
-        else { photoImg.style.display = "none"; photoPh.style.display = "grid"; photoPh.innerHTML = "FAMILY<br>MEMBER"; }
+        applyGiftPhoto(photoImg, photoPh, p, "FAMILY<br>MEMBER");
 
         document.getElementById("res-role").textContent = `${p.role} // SL #${String(p.sl).padStart(3, "0")}`;
         document.getElementById("res-name").textContent = p.name;
@@ -6488,9 +6516,7 @@
 
         const p = res.attendee;
         const st = res.attendee_state || {};
-        const pSrc = getPhotoSrc(p);
-        if (pSrc) { photoImg.src = pSrc; photoImg.style.display = "block"; photoPh.style.display = "none"; }
-        else { photoImg.style.display = "none"; photoPh.style.display = "grid"; photoPh.innerHTML = "MAIN<br>PARTICIPANT"; }
+        applyGiftPhoto(photoImg, photoPh, p, "MAIN<br>PARTICIPANT");
 
         document.getElementById("res-role").textContent = `MAIN PARTICIPANT // SL #${String(p.sl).padStart(3, "0")}`;
         document.getElementById("res-name").textContent = p.name;
@@ -6532,9 +6558,7 @@
 
         const p = res.attendee;
         const st = res.attendee_state || {};
-        const pSrc = getPhotoSrc(p);
-        if (pSrc) { photoImg.src = pSrc; photoImg.style.display = "block"; photoPh.style.display = "none"; }
-        else { photoImg.style.display = "none"; photoPh.style.display = "grid"; photoPh.innerHTML = "MAIN<br>PARTICIPANT"; }
+        applyGiftPhoto(photoImg, photoPh, p, "MAIN<br>PARTICIPANT");
 
         document.getElementById("res-role").textContent = `MAIN PARTICIPANT // SL #${String(p.sl).padStart(3, "0")}`;
         document.getElementById("res-name").textContent = p.name;
@@ -6640,6 +6664,8 @@
     }
 
     function renderDirectory() {
+      const tabDirEl = document.getElementById("tab-dir");
+      if (tabDirEl && tabDirEl.style.display === "none") return;
       const tbody = document.getElementById("dir-tbody");
       const search = (document.getElementById("dir-search").value || "").trim().toLowerCase();
       const statusFilter = document.getElementById("dir-status-filter").value;
