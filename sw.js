@@ -3,7 +3,7 @@
    Khulna, Bangladesh
    ========================================================================== */
 
-const CACHE_NAME = 'blueprint-pwa-v2.3.6';
+const CACHE_NAME = 'blueprint-pwa-v2.3.7';
 
 const PRECACHE_ASSETS = [
   './',
@@ -14,6 +14,8 @@ const PRECACHE_ASSETS = [
   './display.html',
   './gift.html',
   './lottery.html',
+  './js/bsaa-photos.js?v=4',
+  './js/zxing.min.js',
   './css/blueprint.css',
   './js/00-registry.js',
   './js/01-hud-shell.js',
@@ -87,8 +89,9 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Code Assets (JS & CSS): Network first, fall back to cache when offline
-  if (url.pathname.endsWith('.js') || url.pathname.endsWith('.css')) {
+  // Code Assets (JS & CSS): Network first, EXCEPT heavy versioned bundles (bsaa-photos.js / zxing.min.js) which use Cache-First
+  const isHeavyStaticBundle = url.pathname.endsWith('bsaa-photos.js') || url.pathname.endsWith('zxing.min.js');
+  if (!isHeavyStaticBundle && (url.pathname.endsWith('.js') || url.pathname.endsWith('.css'))) {
     event.respondWith(
       fetch(req).then((networkRes) => {
         if (networkRes && networkRes.status === 200) {
@@ -103,20 +106,17 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Static Assets (Images, Icons, Fonts): Cache first with network fallback
+  // Static Assets (Images, Icons, Fonts, Heavy Bundles): Pure Cache-First with network fallback
   event.respondWith(
     caches.match(req).then((cached) => {
-      const fetchPromise = fetch(req).then((networkRes) => {
+      if (cached) return cached;
+      return fetch(req).then((networkRes) => {
         if (networkRes && networkRes.status === 200) {
           const clone = networkRes.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(req, clone));
         }
         return networkRes;
-      }).catch(() => {
-        /* Offline fallback */
-      });
-
-      return cached || fetchPromise;
+      }).catch(() => {});
     })
   );
 });
