@@ -3,7 +3,7 @@
    Khulna, Bangladesh
    ========================================================================== */
 
-const CACHE_NAME = 'blueprint-pwa-v2.3.5';
+const CACHE_NAME = 'blueprint-pwa-v2.3.6';
 
 const PRECACHE_ASSETS = [
   './',
